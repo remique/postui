@@ -1,17 +1,17 @@
 ++++++++++
 [
 >+++++++>++++++++++>+++>+<<<<-
-] Na początek ustawiamy kilka przydatnych później wartości
->++.               drukuje 'H'
->+.                drukuje 'e'
-+++++++.           drukuje 'l'
-.                  drukuje 'l'
-+++.               drukuje 'o'
->++.               spacja
-<<+++++++++++++++. drukuje 'W'
->.                 drukuje 'o'
-+++.               drukuje 'r'
-------.            drukuje 'l'
---------.          drukuje 'd'
->+.                drukuje '!'
->.                 nowa linia
+] Set some useful values
+>++.               prints 'H'
+>+.                prints 'e'
++++++++.           prints 'l'
+.                  prints 'l'
++++.               prints 'o'
+>++.               space
+<<+++++++++++++++. prints 'W'
+>.                 prints 'o'
++++.               prints 'r'
+------.            prints 'l'
+--------.          prints 'd'
+>+.                prints '!'
+>.                 new line

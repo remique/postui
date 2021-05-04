@@ -1,49 +1,58 @@
 // use mybf::BfFile;
 use mybf::*;
 
+use std::env;
+use std::error::Error;
+use std::fs;
 use std::io;
 use std::io::Read;
 use std::str;
 use termion::{async_stdin, event::Key, input::TermRead, raw::IntoRawMode};
 use tui::backend::TermionBackend;
 use tui::buffer::Buffer;
-use tui::layout::{Alignment, Constraint, Direction, Layout, Rect};
+use tui::layout::{Constraint, Direction, Layout, Rect};
 use tui::style::{Color, Modifier, Style};
+use tui::text::Text;
 use tui::text::{Span, Spans};
 use tui::widgets::Widget;
-use tui::widgets::{Block, BorderType, Borders, Paragraph};
-use tui::Frame;
+use tui::widgets::{Block, Borders, Paragraph, Tabs};
 use tui::Terminal;
 
-trait Backend {
-    fn draw<'a, I>(&mut self, content: I) -> Result<(), io::Error>
-    where
-        I: Iterator<Item = (u16, u16, &'a Cell)>;
-}
-
-trait DrawaBleComponent {
-    fn draw<B: Backend>(&self, f: &mut Frame<B>, rect: Rect) -> Result<()>;
-}
-
-struct RegCell<'a> {
-    text: &'a str,
+struct TapeComponent<'a> {
+    // Block to wrap the widget with
     block: Option<Block<'a>>,
-    border_type: BorderType,
+    // Lines compressed into a vector of strings (easier to iterate)
+    bf_file: &'a BfFile,
+    // Style for the widget
+    style: Style,
 }
 
-impl<'a> Default for RegCell<'a> {
-    fn default() -> RegCell<'a> {
-        RegCell {
-            text: "",
+impl<'a> TapeComponent<'a> {
+    fn new(bf_file: &'a BfFile) -> TapeComponent<'a> {
+        TapeComponent {
             block: None,
-            border_type: BorderType::Plain,
+            bf_file,
+            style: Default::default(),
         }
+    }
+    fn read_file(mut self, bf_file: &'a BfFile) -> TapeComponent<'a> {
+        self.bf_file = bf_file;
+        self
+    }
+    pub fn block(mut self, block: Block<'a>) -> TapeComponent<'a> {
+        self.block = Some(block);
+        self
+    }
+    pub fn style(mut self, style: Style) -> TapeComponent<'a> {
+        self.style = style;
+        self
     }
 }
 
-impl<'a> Widget for RegCell<'a> {
+impl<'a> Widget for TapeComponent<'a> {
     fn render(mut self, area: Rect, buf: &mut Buffer) {
-        let text_area = match self.block.take() {
+        buf.set_style(area, self.style);
+        let tabs_area = match self.block.take() {
             Some(b) => {
                 let inner_area = b.inner(area);
                 b.render(area, buf);
@@ -52,86 +61,60 @@ impl<'a> Widget for RegCell<'a> {
             None => area,
         };
 
-        // let num_of_constraints: [Constraint; 10] = [
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        //     Constraint::Percentage(10),
-        // ];
-
-        let mut num_of_constraints = Vec::new();
-        for _ in 0..10 {
-            num_of_constraints.push(Constraint::Percentage(10));
-        }
-
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints(num_of_constraints)
-            .split(text_area);
-
-        let myvec = vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-        let myvec_2 = vec!["", "", "", "", "^", "", "", "", "", ""];
-
-        let mybl = Block::default()
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded);
-
-        for (i, x) in chunks.iter().enumerate() {
-            mybl.clone().render(chunks[i], buf);
-        }
-
-        for (i, x) in myvec.iter().enumerate() {
-            let needed_height = (chunks[i].bottom() - chunks[i].top()) / 2;
-            let needed_width = (chunks[i].right() - chunks[i].left()) / 2;
-
-            // buf.set_string(text_area.left() + i as u16 * 3, text_area.top(), format!("{}", &x), Style::default());
+        for (i, j) in self.bf_file.tape.tape_to(10).iter().enumerate() {
+            let space = i * 6;
             buf.set_string(
-                chunks[i].left() + needed_width,
-                chunks[i].top() + needed_height,
-                format!("{}", &x),
-                Style::default(),
-            );
-        }
-
-        for (i, x) in myvec_2.iter().enumerate() {
-            let needed_height = (chunks[i].bottom() - chunks[i].top()) / 2;
-            let needed_width = (chunks[i].right() - chunks[i].left()) / 2;
-            buf.set_string(
-                chunks[i].left() + needed_width,
-                chunks[i].top() + needed_height + 1,
-                format!("{}", &x),
+                tabs_area.left() + (space as u16),
+                tabs_area.top(),
+                j.to_string(),
                 Style::default(),
             );
         }
     }
 }
 
-impl<'a> RegCell<'a> {
-    fn text(mut self, text: &'a str) -> RegCell<'a> {
-        self.text = text;
-        self
+fn prepare_text<'a>(pos: usize, file: &BfFile) -> Vec<Spans<'a>> {
+    let mut to_return: Vec<Spans> = Vec::new();
+    let contents = fs::read_to_string("test2.bf").expect("blabla");
+    let mut comment_style = Style::default().fg(Color::Rgb(8, 8, 8));
+
+    let mut normal_style = Style::default();
+
+    let mut counter: usize = 0;
+
+    if counter >= file.chars.len() - 1 {
+        counter = 0;
     }
 
-    fn block(mut self, block: Block<'a>) -> RegCell<'a> {
-        self.block = Some(block);
-        self
+    for line in contents.lines() {
+        let mut inner_vec: Vec<Span> = Vec::new();
+        for line_char in line.chars() {
+            if counter == pos {
+                normal_style = Style::default().bg(Color::White);
+                comment_style = Style::default().bg(Color::White).fg(Color::Rgb(8, 8, 8));
+            } else {
+                normal_style = Style::default();
+                comment_style = Style::default().fg(Color::Rgb(8, 8, 8));
+            }
+            match line_char {
+                '+' | '-' | '<' | '>' | '[' | ']' | '.' => {
+                    inner_vec.push(Span::styled(line_char.to_string(), normal_style));
+                }
+                _ => {
+                    inner_vec.push(Span::styled(line_char.to_string(), comment_style));
+                }
+            }
+            counter = counter + 1;
+        }
+        to_return.push(Spans::from(inner_vec.clone()));
     }
 
-    fn border_type(mut self, border_type: BorderType) -> RegCell<'a> {
-        self.border_type = border_type;
-        self
-    }
+    to_return
 }
 
 fn main() -> Result<(), io::Error> {
-    let mut file = BfFile::new("test.bf");
-    println!("{}", file.tape.value_of_index(2));
+    let mut file = BfFile::new("test2.bf");
+    // println!("{}", file.tape.value_of_index(2));
 
     // Set up backend and terminal stuff
     let stdout = io::stdout().into_raw_mode()?;
@@ -147,43 +130,38 @@ fn main() -> Result<(), io::Error> {
                 .direction(Direction::Vertical)
                 .constraints(
                     [
-                        Constraint::Percentage(20),
-                        Constraint::Percentage(70),
-                        Constraint::Length(1),
+                        Constraint::Length(3),
+                        Constraint::Length(4),
+                        Constraint::Min(2),
                     ]
                     .as_ref(),
                 )
                 .split(frame.size());
 
-            let block = Block::default()
-                .title("Some title")
-                .borders(Borders::ALL)
+            let titles = ["Run", "Hexdump", "Settings"]
+                .iter()
+                .cloned()
+                .map(Spans::from)
+                .collect();
+
+            let tabs_component = Tabs::new(titles)
+                .block(Block::default().title("Tabs").borders(Borders::ALL))
+                .style(Style::default().fg(Color::White))
+                .highlight_style(Style::default().fg(Color::Yellow));
+
+            let tape_component = TapeComponent::new(&file)
+                .read_file(&file)
+                .block(Block::default().borders(Borders::ALL));
+
+            let my_text = prepare_text(file.current_pos(), &file);
+
+            let block = Paragraph::new(my_text.clone())
+                .block(Block::default().title("Code").borders(Borders::ALL))
                 .style(Style::default());
 
-            let block_2 = RegCell::default()
-                .text("Test")
-                .block(Block::default().borders(Borders::ALL))
-                .border_type(BorderType::Plain);
-
-            // The output should be fixed length no matter what,
-            // which is 1 line + borders(top&down) + 1 space = 4 lines
-            let block_3 = Block::default()
-                .title("Output")
-                .borders(Borders::ALL)
-                .style(Style::default());
-
-            let text = vec![Spans::from(Span::styled(
-                "Second line",
-                Style::default().fg(Color::Red),
-            ))];
-
-            let block_3 = Paragraph::new(text)
-                // .block(Block::default().title("Paragraph").borders(Borders::NONE))
-                .style(Style::default().fg(Color::White).bg(Color::Black));
-
-            frame.render_widget(block_2, chunks[0]);
-            frame.render_widget(block, chunks[1]);
-            frame.render_widget(block_3, chunks[2]);
+            frame.render_widget(tabs_component, chunks[0]);
+            frame.render_widget(tape_component, chunks[1]);
+            frame.render_widget(block, chunks[2]);
         })?;
 
         for k in async_input.by_ref().keys() {
@@ -192,10 +170,17 @@ fn main() -> Result<(), io::Error> {
                     return Ok(());
                 }
                 Key::Char('w') => {
-                    file.run();
+                    // TODO: tutaj sprawdzamy czy nie wyjechalismy poza buffer
+                    // if current_pos < max_pos --> file.next()
+                    file.next();
                 }
                 _ => (),
             }
         }
     }
 }
+
+// fn main() {
+//     let mut file = BfFile::new("test.bf");
+//     file.run();
+// }
