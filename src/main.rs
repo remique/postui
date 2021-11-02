@@ -1,186 +1,240 @@
-// use mybf::BfFile;
-use mybf::*;
-
-use std::env;
-use std::error::Error;
-use std::fs;
+#![allow(dead_code)]
+#![allow(unused_imports)]
+use serde::{Deserialize, Serialize};
 use std::io;
 use std::io::Read;
-use std::str;
+use std::sync::{Arc, Mutex};
+use std::{thread, time};
 use termion::{async_stdin, event::Key, input::TermRead, raw::IntoRawMode};
 use tui::backend::TermionBackend;
-use tui::buffer::Buffer;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Modifier, Style};
-use tui::text::Text;
-use tui::text::{Span, Spans};
-use tui::widgets::Widget;
-use tui::widgets::{Block, Borders, Paragraph, Tabs};
+use tui::layout::{Constraint, Direction, Layout};
+use tui::style::{Color, Style};
+use tui::text::Spans;
+use tui::widgets::{Block, Borders, Paragraph};
 use tui::Terminal;
 
-struct TapeComponent<'a> {
-    // Block to wrap the widget with
-    block: Option<Block<'a>>,
-    // Lines compressed into a vector of strings (easier to iterate)
-    bf_file: &'a BfFile,
-    // Style for the widget
-    style: Style,
+mod foldertree;
+
+use crate::foldertree::*;
+
+struct AppState {
+    count: i32,
 }
 
-impl<'a> TapeComponent<'a> {
-    fn new(bf_file: &'a BfFile) -> TapeComponent<'a> {
-        TapeComponent {
-            block: None,
-            bf_file,
-            style: Default::default(),
-        }
-    }
-    fn read_file(mut self, bf_file: &'a BfFile) -> TapeComponent<'a> {
-        self.bf_file = bf_file;
-        self
-    }
-    pub fn block(mut self, block: Block<'a>) -> TapeComponent<'a> {
-        self.block = Some(block);
-        self
-    }
-    pub fn style(mut self, style: Style) -> TapeComponent<'a> {
-        self.style = style;
-        self
+impl AppState {
+    fn new() -> Self {
+        AppState { count: 0 }
     }
 }
 
-impl<'a> Widget for TapeComponent<'a> {
-    fn render(mut self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
-        let tabs_area = match self.block.take() {
-            Some(b) => {
-                let inner_area = b.inner(area);
-                b.render(area, buf);
-                inner_area
-            }
-            None => area,
-        };
-
-        for (i, j) in self.bf_file.tape.tape_to(10).iter().enumerate() {
-            let space = i * 6;
-            buf.set_string(
-                tabs_area.left() + (space as u16),
-                tabs_area.top(),
-                j.to_string(),
-                Style::default(),
-            );
-        }
-    }
+fn do_thread_stuff(app_ref: &Arc<Mutex<AppState>>, rx: &std::sync::mpsc::Receiver<i32>) {
+    // rx.try_recv().unwrap();
+    // let mut locked = app_ref.lock().unwrap();
+    // locked.count += 1;
 }
 
-fn prepare_text<'a>(pos: usize, file: &BfFile) -> Vec<Spans<'a>> {
-    let mut to_return: Vec<Spans> = Vec::new();
-    let contents = fs::read_to_string("test2.bf").expect("blabla");
-    let mut comment_style = Style::default().fg(Color::Rgb(8, 8, 8));
+#[derive(Debug, Deserialize, Serialize)]
+pub struct MyEndpoint {
+    r#type: String,
+    name: String,
+    method: String,
+}
 
-    let mut normal_style = Style::default();
+#[derive(Debug)]
+pub struct MyFolder {
+    r#type: String,
+    name: String,
+    folded: bool,
+    items: Vec<MyEndpoint>,
+}
 
-    let mut counter: usize = 0;
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MyEndpointOrFolder {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    r#type: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    r#name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    r#method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    r#folded: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    r#items: Option<Vec<MyEndpoint>>,
+}
 
-    if counter >= file.chars.len() - 1 {
-        counter = 0;
-    }
-
-    for line in contents.lines() {
-        let mut inner_vec: Vec<Span> = Vec::new();
-        for line_char in line.chars() {
-            if counter == pos {
-                normal_style = Style::default().bg(Color::White);
-                comment_style = Style::default().bg(Color::White).fg(Color::Rgb(8, 8, 8));
-            } else {
-                normal_style = Style::default();
-                comment_style = Style::default().fg(Color::Rgb(8, 8, 8));
-            }
-            match line_char {
-                '+' | '-' | '<' | '>' | '[' | ']' | '.' => {
-                    inner_vec.push(Span::styled(line_char.to_string(), normal_style));
-                }
-                _ => {
-                    inner_vec.push(Span::styled(line_char.to_string(), comment_style));
-                }
-            }
-            counter = counter + 1;
+impl MyEndpointOrFolder {
+    fn from_endpoint(e: MyEndpoint) -> MyEndpointOrFolder {
+        MyEndpointOrFolder {
+            r#type: Some(e.r#type),
+            name: Some(e.name),
+            method: Some(e.method),
+            folded: None,
+            items: None,
         }
-        to_return.push(Spans::from(inner_vec.clone()));
     }
 
-    to_return
+    fn from_folder(f: MyFolder) -> MyEndpointOrFolder {
+        MyEndpointOrFolder {
+            r#type: Some(f.r#type),
+            name: Some(f.name),
+            method: None,
+            folded: Some(f.folded),
+            items: Some(f.items),
+        }
+    }
 }
 
 fn main() -> Result<(), io::Error> {
-    let mut file = BfFile::new("test2.bf");
-    // println!("{}", file.tape.value_of_index(2));
+    // Set up terminal output
+    // let stdout = io::stdout().into_raw_mode()?;
+    // let backend = TermionBackend::new(stdout);
+    // let mut terminal = Terminal::new(backend)?;
 
-    // Set up backend and terminal stuff
-    let stdout = io::stdout().into_raw_mode()?;
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    // // Create a separate thread to poll stdin.
+    // // This provides non-blocking input support.
+    // let mut asi = async_stdin();
 
-    let mut async_input = async_stdin();
+    // let app = Arc::new(Mutex::new(AppState::new()));
+    // let cloned_app = Arc::clone(&app);
+    // let (tx, rx) = std::sync::mpsc::channel();
 
-    terminal.clear()?;
-    loop {
-        terminal.draw(|frame| {
-            let chunks = Layout::default()
-                .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Length(3),
-                        Constraint::Length(4),
-                        Constraint::Min(2),
-                    ]
-                    .as_ref(),
-                )
-                .split(frame.size());
-
-            let titles = ["Run", "Hexdump", "Settings"]
-                .iter()
-                .cloned()
-                .map(Spans::from)
-                .collect();
-
-            let tabs_component = Tabs::new(titles)
-                .block(Block::default().title("Tabs").borders(Borders::ALL))
-                .style(Style::default().fg(Color::White))
-                .highlight_style(Style::default().fg(Color::Yellow));
-
-            let tape_component = TapeComponent::new(&file)
-                .read_file(&file)
-                .block(Block::default().borders(Borders::ALL));
-
-            let my_text = prepare_text(file.current_pos(), &file);
-
-            let block = Paragraph::new(my_text.clone())
-                .block(Block::default().title("Code").borders(Borders::ALL))
-                .style(Style::default());
-
-            frame.render_widget(tabs_component, chunks[0]);
-            frame.render_widget(tape_component, chunks[1]);
-            frame.render_widget(block, chunks[2]);
-        })?;
-
-        for k in async_input.by_ref().keys() {
-            match k.unwrap() {
-                Key::Char('q') => {
-                    return Ok(());
-                }
-                Key::Char('w') => {
-                    // TODO: tutaj sprawdzamy czy nie wyjechalismy poza buffer
-                    // if current_pos < max_pos --> file.next()
-                    file.next();
-                }
-                _ => (),
+    // thread::spawn(move || loop {
+    //     do_thread_stuff(&app, &rx);
+    //     // thread::sleep(time::Duration::from_millis(100));
+    // });
+    let j = r#"
+[
+    {
+        "type": "folder",
+        "name": "Pierwszy",
+        "folded": false,
+        "items": [
+            {
+                "type": "endpoint",
+                "name": "Dodaj usera",
+                "method": "POST"
+            },
+            {
+                "type": "endpoint",
+                "name": "Zmien userow",
+                "method": "PUT"
+            },
+            {
+                "type": "folder",
+                "name": "Nested",
+                "folded": false,
+                "items": [
+                    {
+                        "type": "endpoint",
+                        "name": "Nested jeszcze",
+                        "method": "GET"
+                    }
+                ]
             }
-        }
+        ]
+    },
+    {
+        "type": "endpoint",
+        "name": "Costam",
+        "method": "POST"
     }
-}
+]
+    "#;
 
-// fn main() {
-//     let mut file = BfFile::new("test.bf");
-//     file.run();
-// }
+    let k = r#"
+[
+    {
+        "type": "folder",
+        "name": "Pierwszy",
+        "folded": false,
+        "items": [
+            {
+                "type": "endpoint",
+                "name": "Dodaj usera",
+                "method": "POST"
+            },
+            {
+                "type": "endpoint",
+                "name": "Zmien userow",
+                "method": "PUT"
+            }
+        ]
+    },
+    {
+        "type": "endpoint",
+        "name": "Costam",
+        "method": "POST"
+    }
+]
+    "#;
+
+    // let p: Vec<MyEndpointOrFolder> = serde_json::from_str(&k).expect("xd");
+    // println!("{:#?}", p);
+
+    let mut ftc = FolderTreeComponent::new();
+    ftc.from_str(j);
+
+    for item in ftc.items {
+        println!("{:#?}", item.obj);
+    }
+
+    Ok(())
+
+    // // Clear the terminal before first draw.
+    // terminal.clear()?;
+    // loop {
+    //     let mut app = cloned_app.lock().unwrap();
+
+    //     // Lock the terminal and start a drawing session.
+    //     terminal.draw(|frame| {
+    //         // Create a layout into which to place our blocks.
+    //         let chunks = Layout::default()
+    //             .direction(Direction::Horizontal)
+    //             .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+    //             .split(frame.size());
+
+    //         // Create a block...
+    //         let block = Block::default()
+    //             // With a given title...
+    //             .title("Color Changer")
+    //             // Borders on every side...
+    //             .borders(Borders::ALL)
+    //             // The background of the current color...
+    //             .style(Style::default());
+
+    //         // Render into the first chunk of the layout.
+    //         frame.render_widget(block, chunks[0]);
+
+    //         // The text lines for our text box.
+    //         let txt = vec![Spans::from(format!("{}", app.count))];
+    //         // Create a paragraph with the above text...
+    //         let graph = Paragraph::new(txt)
+    //             // In a block with borders and the given title...
+    //             .block(Block::default().title("Text box").borders(Borders::ALL))
+    //             // With white foreground and black background...
+    //             .style(Style::default().fg(Color::White).bg(Color::Black));
+
+    //         // Render into the second chunk of the layout.
+    //         frame.render_widget(graph, chunks[1]);
+    //     })?;
+
+    //     // Iterate over all the keys that have been pressed since the
+    //     // last time we checked.
+    //     for k in asi.by_ref().keys() {
+    //         match k.unwrap() {
+    //             // If any of them is q, quit
+    //             Key::Char('q') => {
+    //                 // Clear the terminal before exit so as not to leave
+    //                 // a mess.
+    //                 terminal.clear()?;
+    //                 return Ok(());
+    //             }
+    //             Key::Char('e') => {
+    //                 tx.send(10).unwrap();
+    //             }
+    //             // Otherwise, throw them away.
+    //             _ => (),
+    //         }
+    //     }
+    // }
+}
