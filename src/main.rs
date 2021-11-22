@@ -136,22 +136,22 @@ impl MyEvents {
 
 fn main() -> Result<(), io::Error> {
     // Set up terminal output
-    let stdout = io::stdout().into_raw_mode()?;
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    // let stdout = io::stdout().into_raw_mode()?;
+    // let backend = TermionBackend::new(stdout);
+    // let mut terminal = Terminal::new(backend)?;
 
-    // Create a separate thread to poll stdin.
-    // This provides non-blocking input support.
-    let mut asi = async_stdin();
+    // // Create a separate thread to poll stdin.
+    // // This provides non-blocking input support.
+    // let mut asi = async_stdin();
 
-    let app = Arc::new(Mutex::new(AppState::new()));
-    let cloned_app = Arc::clone(&app);
-    let (tx, rx) = std::sync::mpsc::channel();
+    // let app = Arc::new(Mutex::new(AppState::new()));
+    // let cloned_app = Arc::clone(&app);
+    // let (tx, rx) = std::sync::mpsc::channel();
 
-    thread::spawn(move || loop {
-        do_thread_stuff(&app, &rx);
-        // thread::sleep(time::Duration::from_millis(100));
-    });
+    // thread::spawn(move || loop {
+    //     do_thread_stuff(&app, &rx);
+    //     // thread::sleep(time::Duration::from_millis(100));
+    // });
     let j = r#"
 [
     {
@@ -191,94 +191,166 @@ fn main() -> Result<(), io::Error> {
 ]
     "#;
 
+    let k = r#"
+    {
+        "root": [
+            {
+                "type": "folder",
+                "name": "Pierwszy",
+                "folded": false,
+                "path": "/root/0",
+                "items": [
+                    {
+                        "type": "endpoint",
+                        "name": "Dodaj usera",
+                        "method": "POST",
+                        "path": "/root/0/items/0"
+                    },
+                    {
+                        "type": "endpoint",
+                        "name": "Zmien userow",
+                        "method": "PUT",
+                        "path": "/root/0/items/1"
+                    },
+                    {
+                        "type": "folder",
+                        "name": "Nested",
+                        "folded": false,
+                        "path": "/root/0/items/2",
+                        "items": [
+                            {
+                                "type": "endpoint",
+                                "name": "Nested jeszcze",
+                                "method": "GET",
+                                "path": "/root/0/items/2/items/0"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "endpoint",
+                "name": "Costam",
+                "method": "POST",
+                "path": "/root/1"
+            }
+        ]
+    }
+    "#;
+
+    let s = r#"
+        {
+            "type": "endpoint",
+            "name": "Dodany na nowo",
+            "method": "POST""#;
     let mut ftc = FolderTreeComponent::new();
     ftc.from_str(j);
 
     let mut costam: Vec<String> = Vec::new();
 
-    for item in ftc.items {
-        println!("{:#?}", item.obj);
-        costam.push(item.rep);
-    }
+    let mut data: serde_json::Value = serde_json::from_str(k).unwrap();
 
-    let mut events = MyEvents::new(costam);
+    // println!("{:?}", data);
+    // println!("{:#?}", data.pointer("/root/0/items/1").unwrap());
+
+    // TODO Better construction of "s"
+    // Can be done through normal serialization i guess:=)
+    let new_path = "/root/0/items/1".trim_end_matches("/1");
+    let mut new_ptr = data.pointer_mut(new_path).unwrap().as_array_mut().unwrap();
+
+    let mut new_path_to_save = String::from(new_path);
+    let idx_new = new_ptr.len();
+    new_path_to_save.push_str(format!("/{}", idx_new).as_str());
+    let mut ss = String::from(s);
+    ss.push_str(",\n \"path\": \"");
+    ss.push_str(new_path_to_save.as_str());
+    ss.push_str("\"\n}");
+    let new_data: serde_json::Value = serde_json::from_str(ss.as_str()).unwrap();
+    // println!("{}", new_path);
+    new_ptr.push(new_data);
+    println!("{:#?}", data);
+    // and then push into the vector of items another value
+
+    // let mut events = MyEvents::new(costam);
+
+    Ok(())
 
     // Clear the terminal before first draw.
-    terminal.clear()?;
-    loop {
-        let mut app = cloned_app.lock().unwrap();
+    // terminal.clear()?;
+    // loop {
+    //     let mut app = cloned_app.lock().unwrap();
 
-        // Lock the terminal and start a drawing session.
-        terminal.draw(|frame| {
-            // Create a layout into which to place our blocks.
-            let chunks = Layout::default()
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
-                .split(frame.size());
+    //     // Lock the terminal and start a drawing session.
+    //     terminal.draw(|frame| {
+    //         // Create a layout into which to place our blocks.
+    //         let chunks = Layout::default()
+    //             .direction(Direction::Horizontal)
+    //             .constraints([Constraint::Percentage(30), Constraint::Percentage(70)].as_ref())
+    //             .split(frame.size());
 
-            // // Create a block...
-            // let block = Block::default()
-            //     // With a given title...
-            //     .title("Color Changer")
-            //     // Borders on every side...
-            //     .borders(Borders::ALL)
-            //     // The background of the current color...
-            //     .style(Style::default());
+    //         // // Create a block...
+    //         // let block = Block::default()
+    //         //     // With a given title...
+    //         //     .title("Color Changer")
+    //         //     // Borders on every side...
+    //         //     .borders(Borders::ALL)
+    //         //     // The background of the current color...
+    //         //     .style(Style::default());
 
-            let items: Vec<ListItem> = events
-                .items
-                .iter()
-                .map(|i| ListItem::new(i.as_ref()))
-                .collect();
+    //         let items: Vec<ListItem> = events
+    //             .items
+    //             .iter()
+    //             .map(|i| ListItem::new(i.as_ref()))
+    //             .collect();
 
-            let block = List::new(items)
-                .block(Block::default().title("List").borders(Borders::ALL))
-                .style(Style::default().fg(Color::Rgb(180, 180, 180)))
-                .highlight_style(
-                    Style::default()
-                        .fg(Color::White)
-                        .add_modifier(Modifier::BOLD),
-                )
-                .highlight_symbol(">");
+    //         let block = List::new(items)
+    //             .block(Block::default().title("List").borders(Borders::ALL))
+    //             .style(Style::default().fg(Color::Rgb(180, 180, 180)))
+    //             .highlight_style(
+    //                 Style::default()
+    //                     .fg(Color::White)
+    //                     .add_modifier(Modifier::BOLD),
+    //             )
+    //             .highlight_symbol(">");
 
-            // Render into the first chunk of the layout.
-            frame.render_stateful_widget(block, chunks[0], &mut events.state);
+    //         // Render into the first chunk of the layout.
+    //         frame.render_stateful_widget(block, chunks[0], &mut events.state);
 
-            // The text lines for our text box.
-            let txt = vec![Spans::from(format!("{}", app.count))];
-            // Create a paragraph with the above text...
-            let graph = Paragraph::new(txt)
-                // In a block with borders and the given title...
-                .block(Block::default().title("Text box").borders(Borders::ALL))
-                // With white foreground and black background...
-                .style(Style::default().fg(Color::White).bg(Color::Black));
+    //         // The text lines for our text box.
+    //         let txt = vec![Spans::from(format!("{}", app.count))];
+    //         // Create a paragraph with the above text...
+    //         let graph = Paragraph::new(txt)
+    //             // In a block with borders and the given title...
+    //             .block(Block::default().title("Text box").borders(Borders::ALL))
+    //             // With white foreground and black background...
+    //             .style(Style::default().fg(Color::White).bg(Color::Black));
 
-            // Render into the second chunk of the layout.
-            frame.render_widget(graph, chunks[1]);
-        })?;
+    //         // Render into the second chunk of the layout.
+    //         frame.render_widget(graph, chunks[1]);
+    //     })?;
 
-        // Iterate over all the keys that have been pressed since the
-        // last time we checked.
-        for k in asi.by_ref().keys() {
-            match k.unwrap() {
-                // If any of them is q, quit
-                Key::Char('q') => {
-                    // Clear the terminal before exit so as not to leave
-                    // a mess.
-                    terminal.clear()?;
-                    return Ok(());
-                }
-                Key::Char('s') => {
-                    // tx.send(10).unwrap();
-                    events.next();
-                }
-                Key::Char('w') => {
-                    // tx.send(10).unwrap();
-                    events.previous();
-                }
-                // Otherwise, throw them away.
-                _ => (),
-            }
-        }
-    }
+    //     // Iterate over all the keys that have been pressed since the
+    //     // last time we checked.
+    //     for k in asi.by_ref().keys() {
+    //         match k.unwrap() {
+    //             // If any of them is q, quit
+    //             Key::Char('q') => {
+    //                 // Clear the terminal before exit so as not to leave
+    //                 // a mess.
+    //                 terminal.clear()?;
+    //                 return Ok(());
+    //             }
+    //             Key::Char('s') => {
+    //                 // tx.send(10).unwrap();
+    //                 events.next();
+    //             }
+    //             Key::Char('w') => {
+    //                 // tx.send(10).unwrap();
+    //                 events.previous();
+    //             }
+    //             // Otherwise, throw them away.
+    //             _ => (),
+    //         }
+    //     }
+    // }
 }

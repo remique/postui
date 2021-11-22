@@ -16,6 +16,14 @@ pub struct FolderTreeComponent {
     pub items: Vec<Item>,
 }
 
+pub struct InnerItem {
+    pub r#type: Option<String>,
+    pub name: Option<String>,
+    pub method: Option<String>,
+    pub folded: Option<bool>,
+    pub items: Option<Vec<InnerItem>>,
+}
+
 impl FolderTreeComponent {
     pub fn new() -> Self {
         FolderTreeComponent { items: Vec::new() }
@@ -104,6 +112,16 @@ impl FolderTreeComponent {
             .unwrap();
 
         self.parse(arr, indent);
+    }
+
+    pub fn generate_indices(&self) {
+        let new_vec: Vec<Vec<InnerItem>> = Vec::new();
+
+        let tst = self.items[0].obj.as_object().unwrap();
+
+        for (idx, item) in self.items.iter().enumerate() {
+            println!("{} -- {:?}\n", idx, item.rep);
+        }
     }
 }
 
