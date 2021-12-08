@@ -8,12 +8,16 @@ pub struct Endpoint {
 }
 
 pub struct Item {
+    // Representation of an item which is a symbol+name
     pub rep: String,
-    pub obj: serde_json::Value,
+
+    // A string path in order to access a specific Item in a Tree
+    pub obj_ref: String,
 }
 
-pub struct FolderTreeComponent {
+pub struct FolderTree {
     pub items: Vec<Item>,
+    pub data: serde_json::Value,
 }
 
 pub struct InnerItem {
@@ -22,22 +26,30 @@ pub struct InnerItem {
     pub method: Option<String>,
     pub folded: Option<bool>,
     pub items: Option<Vec<InnerItem>>,
+    pub path: Option<String>,
 }
 
-impl FolderTreeComponent {
+impl FolderTree {
     pub fn new() -> Self {
-        FolderTreeComponent { items: Vec::new() }
+        FolderTree {
+            items: Vec::new(),
+            data: serde_json::Value::Null,
+        }
     }
 
-    pub fn from_str(&mut self, input: &str) {
-        let json_data: Vec<serde_json::Value> = serde_json::from_str(input).unwrap();
-        let indent: i32 = 0;
+    pub fn load_str(&mut self, input: &str) {
+        let original_input: serde_json::Value = serde_json::from_str(input).unwrap();
+        let element_list = original_input
+            .get("root")
+            .and_then(serde_json::Value::as_array)
+            .unwrap();
 
-        self.parse(&json_data, indent);
+        self.parse(element_list, 0);
     }
 
     pub fn parse(&mut self, json_data: &Vec<serde_json::Value>, indent: i32) {
         let mut temp_vec: Vec<Item> = Vec::new();
+
         for data in json_data.iter() {
             let val = serde_json::Value::deserialize(data).unwrap();
 
@@ -64,17 +76,14 @@ impl FolderTreeComponent {
                             symbol,
                             val.get("name").and_then(serde_json::Value::as_str).unwrap()
                         )),
-                        obj: val.clone(),
+                        obj_ref: val
+                            .get("path")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap()
+                            .to_string(),
                     };
 
                     temp_vec.push(temp_obj);
-
-                    // temp_vec.push(String::from(format!(
-                    //     "{}{} {}",
-                    //     construct_indent(indent),
-                    //     symbol,
-                    //     val.get("name").and_then(serde_json::Value::as_str).unwrap()
-                    // )));
 
                     self.items.append(&mut temp_vec);
 
@@ -88,21 +97,23 @@ impl FolderTreeComponent {
     }
 
     pub fn parse_endpoint(&mut self, val: &serde_json::Value, indent: i32) {
-        let des: Endpoint = serde_json::from_value(val.clone()).unwrap();
+        let cur_endpoint: Endpoint = serde_json::from_value(val.clone()).unwrap();
 
         let ind = construct_indent(indent);
 
         let temp_obj: Item = Item {
-            rep: String::from(format!("{}  {} {}", ind, des.method, des.name)),
-            obj: val.clone(),
+            rep: String::from(format!(
+                "{}  {} {}",
+                ind, cur_endpoint.method, cur_endpoint.name
+            )),
+            obj_ref: val
+                .get("path")
+                .and_then(serde_json::Value::as_str)
+                .unwrap()
+                .to_string(),
         };
 
         self.items.push(temp_obj);
-
-        // self.items.push(String::from(format!(
-        //     "{}  {} {}",
-        //     ind, des.method, des.name
-        // )));
     }
 
     pub fn parse_folder(&mut self, val: &serde_json::Value, _folded: bool, indent: i32) {
@@ -117,11 +128,21 @@ impl FolderTreeComponent {
     pub fn generate_indices(&self) {
         let new_vec: Vec<Vec<InnerItem>> = Vec::new();
 
-        let tst = self.items[0].obj.as_object().unwrap();
-
         for (idx, item) in self.items.iter().enumerate() {
             println!("{} -- {:?}\n", idx, item.rep);
         }
+    }
+
+    fn get_element_ptr(&self, path: &str) -> Option<&serde_json::Value> {
+        let ptr = self.data.pointer(path);
+
+        ptr
+    }
+
+    fn get_element_ptr_mut(&mut self, path: &str) -> Option<&mut serde_json::Value> {
+        let ptr = self.data.pointer_mut(path);
+
+        ptr
     }
 }
 
@@ -133,20 +154,3 @@ fn construct_indent(indent: i32) -> String {
 
     ind
 }
-
-// So each item need some kind of indentation info? Or We have to
-// keep the information where this item is in order to change some value
-//
-// NEW: I guess we have to use derive(Serialize) and serialize an entire object
-// and then parse it? Which would give us access to specific fields
-// and we could easily serialize/deserialize everything
-//
-// I guess we can keep serde_json::Value inside the structure field and then
-// parsing that is easy?
-// Reference: https://github.com/serde-rs/json/issues/144#issuecomment-242877324
-//
-// Another reference because I need an anonymous array instead of single object
-// https://newbedev.com/how-can-i-use-serde-with-a-json-array-with-different-objects-for-successes-and-errors
-//
-// Another one.... From the author, might be good. Also come back to the second link
-// https://www.reddit.com/r/rust/comments/7hasv6/mixed_valuestruct_deserialization_with_serde_json/?sort=top
