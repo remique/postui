@@ -22,13 +22,13 @@ use crate::foldertree::*;
 
 fn main() -> Result<(), io::Error> {
     // Set up terminal output
-    let stdout = io::stdout().into_raw_mode()?;
-    let backend = TermionBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    // let stdout = io::stdout().into_raw_mode()?;
+    // let backend = TermionBackend::new(stdout);
+    // let mut terminal = Terminal::new(backend)?;
 
-    // Create a separate thread to poll stdin.
-    // This provides non-blocking input support.
-    let mut asi = async_stdin();
+    // // Create a separate thread to poll stdin.
+    // // This provides non-blocking input support.
+    // let mut asi = async_stdin();
 
     let k = r#"
     {
@@ -77,19 +77,21 @@ fn main() -> Result<(), io::Error> {
     }
     "#;
 
-    let s = r#"
-        {
-            "type": "endpoint",
-            "name": "Dodany na nowo",
-            "method": "POST""#;
+    let mut ft = FolderTree::from_str(k);
+    ft.parse_all();
+
+    for item in ft.items.borrow().iter() {
+        println!("{}", item.rep);
+    }
 
     let mut app = App::new();
 
     // Clear the terminal before first draw.
-    terminal.clear()?;
-    loop {
-        draw(&mut terminal, &app)?;
-    }
+    // terminal.clear()?;
+    // loop {
+    //     draw(&mut terminal, &app)?;
+    // }
+    Ok(())
 }
 
 fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {
