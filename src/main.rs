@@ -72,6 +72,20 @@ fn main() -> Result<(), io::Error> {
                 "name": "Costam",
                 "method": "POST",
                 "path": "/root/1"
+            },
+            {
+                "type": "folder",
+                "name": "Trzeci folder",
+                "folded": false,
+                "path": "/root/2",
+                "items": [
+                    {
+                        "type": "endpoint",
+                        "name": "Nested jeszcze",
+                        "method": "GET",
+                        "path": "/root/2/items/0"
+                    }
+                ]
             }
         ]
     }
@@ -80,9 +94,13 @@ fn main() -> Result<(), io::Error> {
     let mut ft = FolderTree::from_str(k);
     ft.parse_all();
 
-    for item in ft.items.borrow().iter() {
-        println!("{}", item.rep);
-    }
+    ft.insert_folder("/root/0/items/1");
+    ft.insert_folder("/root/0/items/2");
+    ft.insert_folder("/root/2");
+
+    // for item in ft.items.borrow().iter() {
+    //     println!("{}", item.rep);
+    // }
 
     let mut app = App::new();
 

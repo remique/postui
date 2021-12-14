@@ -111,6 +111,51 @@ impl FolderTree {
         self.items.borrow_mut().push(temp_obj);
     }
 
+    fn build_path_insert(&self, path: &str) -> String {
+        // We split the path into a vector of '/'
+        let tmp: Vec<&str> = path.split('/').collect();
+        let tmp_data = self.data.pointer(path).unwrap();
+
+        let mut new = String::new();
+
+        if tmp_data.get("items").is_some() {
+            new = tmp.join("/");
+
+            if tmp_data
+                .get("items")
+                .and_then(serde_json::Value::as_array)
+                .unwrap()
+                .len()
+                == 0
+            {
+                // We append /items/0 as it is the first item in the array
+                new.push_str(format!("/items/{}", 0).as_str());
+            } else {
+                let index = self
+                    .data
+                    .pointer(format!("{}/items", new.as_str()).as_str())
+                    .unwrap()
+                    .as_array()
+                    .unwrap()
+                    .len();
+
+                new.push_str(format!("/items/{}", index.to_string().as_str()).as_str());
+            }
+        } else {
+            new = tmp[0..tmp.len() - 1].join("/");
+            let index = self
+                .data
+                .pointer(new.as_str())
+                .unwrap()
+                .as_array()
+                .unwrap()
+                .len();
+            new.push_str(format!("/{}", index.to_string().as_str()).as_str());
+        }
+
+        new
+    }
+
     pub fn insert_folder(&mut self, path: &str) {
         // We get element ptr to the path
         //
@@ -121,6 +166,9 @@ impl FolderTree {
         // Then we have to prepare a new serde_json::Value compliant to the endpoint/folder look
         // We have to generate a path for it and then push it to the vector of items and update
         // self.data (borrow as mut) as in example in main.rs
+        let new_path_tmp = self.build_path_insert(path);
+
+        println!("{}", new_path_tmp);
 
         // EXAMPLE FROM MAIN:
 
@@ -177,4 +225,97 @@ fn construct_indent(indent: i32) -> String {
     }
 
     ind
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn setup_ft() -> FolderTree {
+        let k = r#"
+            {
+                "root": [
+                    {
+                        "type": "folder",
+                        "name": "Pierwszy",
+                        "folded": false,
+                        "path": "/root/0",
+                        "items": [
+                            {
+                                "type": "endpoint",
+                                "name": "Dodaj usera",
+                                "method": "POST",
+                                "path": "/root/0/items/0"
+                            },
+                            {
+                                "type": "endpoint",
+                                "name": "Zmien userow",
+                                "method": "PUT",
+                                "path": "/root/0/items/1"
+                            },
+                            {
+                                "type": "folder",
+                                "name": "Nested",
+                                "folded": false,
+                                "path": "/root/0/items/2",
+                                "items": [
+                                    {
+                                        "type": "endpoint",
+                                        "name": "Nested jeszcze",
+                                        "method": "GET",
+                                        "path": "/root/0/items/2/items/0"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "endpoint",
+                        "name": "Costam",
+                        "method": "POST",
+                        "path": "/root/1"
+                    },
+                    {
+                        "type": "folder",
+                        "name": "Trzeci folder",
+                        "folded": false,
+                        "path": "/root/2",
+                        "items": []
+                    }
+                ]
+            }
+        "#;
+
+        FolderTree::from_str(k)
+    }
+
+    #[test]
+    fn test_path_new_folder_to_endpoint() {
+        let ft = setup_ft();
+
+        assert_eq!(
+            String::from("/root/0/items/3"),
+            ft.build_path_insert("/root/0/items/1")
+        );
+    }
+
+    #[test]
+    fn test_path_new_folder_to_empty_folder() {
+        let ft = setup_ft();
+
+        assert_eq!(
+            String::from("/root/2/items/0"),
+            ft.build_path_insert("/root/2")
+        );
+    }
+
+    #[test]
+    fn test_path_new_folder_to_non_empty_folder() {
+        let ft = setup_ft();
+
+        assert_eq!(
+            String::from("/root/0/items/2/items/1"),
+            ft.build_path_insert("/root/0/items/2")
+        );
+    }
 }
