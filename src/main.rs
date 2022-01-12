@@ -95,12 +95,7 @@ fn main() -> Result<(), io::Error> {
     ft.parse_all();
 
     ft.insert_folder("/root/0/items/1");
-    ft.insert_folder("/root/0/items/2");
-    ft.insert_folder("/root/2");
-
-    // for item in ft.items.borrow().iter() {
-    //     println!("{}", item.rep);
-    // }
+    ft.show_representation();
 
     let mut app = App::new();
 

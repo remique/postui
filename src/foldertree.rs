@@ -169,7 +169,6 @@ impl FolderTree {
     pub fn insert_folder(&mut self, path: &str) {
         let new_path_tmp = self.build_path_insert(path);
 
-        // println!("{}", new_path_tmp);
         let newfolder = NewFolder {
             r#type: String::from("folder"),
             name: String::from("ZUPELNIE NOWY"),
@@ -189,14 +188,11 @@ impl FolderTree {
             .as_array_mut()
             .unwrap();
 
-        println!("{:?}", dts);
-
         let j = serde_json::to_string(&newfolder).unwrap();
         let k: serde_json::Value = serde_json::from_str(j.as_str()).unwrap();
 
         dts.push(k);
-
-        println!("{:#?}", self.data);
+        self.parse_all();
     }
 
     pub fn parse_folder(&self, val: &serde_json::Value, _folded: bool, indent: i32) {
@@ -210,7 +206,7 @@ impl FolderTree {
 
     pub fn show_representation(&self) {
         for (idx, item) in self.items.borrow().iter().enumerate() {
-            println!("{} -- {:?}\n", idx, item.rep);
+            println!("{:?}\n", item.rep);
         }
     }
 }
@@ -218,7 +214,7 @@ impl FolderTree {
 fn construct_indent(indent: i32) -> String {
     let mut ind = String::from("");
     for _ in 0..indent {
-        ind.push_str("  ");
+        ind.push_str("    ");
     }
 
     ind
