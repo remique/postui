@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 
 #[derive(Deserialize)]
@@ -22,6 +22,16 @@ pub struct FolderTree {
 
     // Original object containing all the values
     pub data: serde_json::Value,
+}
+
+// This is used only to serialize new folder which will be inserted
+#[derive(Serialize)]
+struct NewFolder {
+    r#type: String,
+    name: String,
+    folded: bool,
+    path: String,
+    items: Vec<String>,
 }
 
 impl FolderTree {
@@ -157,49 +167,36 @@ impl FolderTree {
     }
 
     pub fn insert_folder(&mut self, path: &str) {
-        // We get element ptr to the path
-        //
-        // We check if we got a folder or an endpoint
-        // If we got an endpoint we have to subract the string as to add to the folder
-        // If we got a folder in the path we do nothing
-        //
-        // Then we have to prepare a new serde_json::Value compliant to the endpoint/folder look
-        // We have to generate a path for it and then push it to the vector of items and update
-        // self.data (borrow as mut) as in example in main.rs
         let new_path_tmp = self.build_path_insert(path);
 
-        println!("{}", new_path_tmp);
+        // println!("{}", new_path_tmp);
+        let newfolder = NewFolder {
+            r#type: String::from("folder"),
+            name: String::from("ZUPELNIE NOWY"),
+            folded: false,
+            path: new_path_tmp,
+            items: vec![],
+        };
 
-        // EXAMPLE FROM MAIN:
+        // Truncate the path to insert it into a folder
+        let tmp_split: Vec<&str> = path.split('/').collect();
+        let previous_folder_path = tmp_split[0..tmp_split.len() - 1].join("/");
 
-        // S should serialize normally via serde_json:
-        //     let s = r#"
-        //         {
-        //             "type": "endpoint",
-        //             "name": "Dodany na nowo",
-        //             "method": "POST""#;
-        // let mut data: serde_json::Value = serde_json::from_str(k).unwrap();
+        let mut dts = self
+            .data
+            .pointer_mut(previous_folder_path.as_str())
+            .unwrap()
+            .as_array_mut()
+            .unwrap();
 
-        // // println!("{:?}", data);
-        // // println!("{:#?}", data.pointer("/root/0/items/1").unwrap());
+        println!("{:?}", dts);
 
-        // // TODO Better construction of "s"
-        // // Can be done through normal serialization i guess:=)
-        // let new_path = "/root/0/items/1".trim_end_matches("/1");
-        // let mut new_ptr = data.pointer_mut(new_path).unwrap().as_array_mut().unwrap();
+        let j = serde_json::to_string(&newfolder).unwrap();
+        let k: serde_json::Value = serde_json::from_str(j.as_str()).unwrap();
 
-        // let mut new_path_to_save = String::from(new_path);
-        // let idx_new = new_ptr.len();
-        // new_path_to_save.push_str(format!("/{}", idx_new).as_str());
-        // let mut ss = String::from(s);
-        // ss.push_str(",\n \"path\": \"");
-        // ss.push_str(new_path_to_save.as_str());
-        // ss.push_str("\"\n}");
-        // let new_data: serde_json::Value = serde_json::from_str(ss.as_str()).unwrap();
-        // // println!("{}", new_path);
-        // new_ptr.push(new_data);
-        // println!("{:#?}", data);
-        // // and then push into the vector of items another value
+        dts.push(k);
+
+        println!("{:#?}", self.data);
     }
 
     pub fn parse_folder(&self, val: &serde_json::Value, _folded: bool, indent: i32) {
