@@ -137,7 +137,8 @@ impl FolderTree {
         let tmp: Vec<&str> = path.split('/').collect();
         let tmp_data = self.data.pointer(path).unwrap();
 
-        let mut new = String::new();
+        // This looks weird but works for now
+        let mut new;
 
         if tmp_data.get("items").is_some() {
             new = tmp.join("/");
@@ -195,10 +196,6 @@ impl FolderTree {
             items: vec![],
         };
 
-        // Truncate the path to insert it into a folder
-        // let tmp_split: Vec<&str> = path.split('/').collect();
-        // let previous_folder_path = tmp_split[0..tmp_split.len() - 1].join("/");
-
         let previous_folder_path = self.get_truncated_path(path);
 
         let dts = self
@@ -217,8 +214,6 @@ impl FolderTree {
 
     pub fn insert_endpoint(&mut self, path: &str) {
         let new_path_tmp = self.build_path_insert(path);
-
-        println!("{}", new_path_tmp);
 
         let newendpoint = NewEndpoint {
             r#type: String::from("endpoint"),
@@ -252,14 +247,9 @@ impl FolderTree {
     }
 
     pub fn show_representation(&self) {
-        for (idx, item) in self.items.borrow().iter().enumerate() {
+        for item in self.items.borrow().iter() {
             println!("{:?}", item.rep);
         }
-
-        println!("\n\n\n");
-
-        let asdf = serde_json::to_string(&self.data).unwrap();
-        println!("{}", asdf);
     }
 }
 

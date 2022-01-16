@@ -98,7 +98,7 @@ fn main() -> Result<(), io::Error> {
     ft.insert_endpoint("/root/0/items/3");
     ft.show_representation();
 
-    let mut app = App::new();
+    let mut _app = App::new();
 
     // Clear the terminal before first draw.
     // terminal.clear()?;

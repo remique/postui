@@ -8,7 +8,7 @@ impl App {
         Self {}
     }
 
-    pub fn draw<B: Backend>(&self, f: &mut Frame<B>) -> std::io::Result<()> {
+    pub fn draw<B: Backend>(&self, _f: &mut Frame<B>) -> std::io::Result<()> {
         Ok(())
     }
 }
