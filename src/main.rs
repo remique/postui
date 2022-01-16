@@ -95,6 +95,7 @@ fn main() -> Result<(), io::Error> {
     ft.parse_all();
 
     ft.insert_folder("/root/0/items/1");
+    ft.insert_endpoint("/root/0/items/3");
     ft.show_representation();
 
     let mut app = App::new();

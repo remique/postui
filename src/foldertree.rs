@@ -34,6 +34,14 @@ struct NewFolder {
     items: Vec<String>,
 }
 
+#[derive(Serialize)]
+struct NewEndpoint {
+    r#type: String,
+    name: String,
+    method: String,
+    path: String,
+}
+
 impl FolderTree {
     pub fn from_str(input: &str) -> Self {
         FolderTree {
@@ -43,6 +51,9 @@ impl FolderTree {
     }
 
     pub fn parse_all(&self) {
+        // Each time we re-parse everything we have to clear the items vector
+        self.items.borrow_mut().clear();
+
         let json_data = self
             .data
             .get("root")
@@ -166,6 +177,13 @@ impl FolderTree {
         new
     }
 
+    fn get_truncated_path(&self, path: &str) -> String {
+        let tmp_split: Vec<&str> = path.split('/').collect();
+        let previous_folder_path = tmp_split[0..tmp_split.len() - 1].join("/");
+
+        previous_folder_path
+    }
+
     pub fn insert_folder(&mut self, path: &str) {
         let new_path_tmp = self.build_path_insert(path);
 
@@ -178,10 +196,12 @@ impl FolderTree {
         };
 
         // Truncate the path to insert it into a folder
-        let tmp_split: Vec<&str> = path.split('/').collect();
-        let previous_folder_path = tmp_split[0..tmp_split.len() - 1].join("/");
+        // let tmp_split: Vec<&str> = path.split('/').collect();
+        // let previous_folder_path = tmp_split[0..tmp_split.len() - 1].join("/");
 
-        let mut dts = self
+        let previous_folder_path = self.get_truncated_path(path);
+
+        let dts = self
             .data
             .pointer_mut(previous_folder_path.as_str())
             .unwrap()
@@ -189,6 +209,33 @@ impl FolderTree {
             .unwrap();
 
         let j = serde_json::to_string(&newfolder).unwrap();
+        let k: serde_json::Value = serde_json::from_str(j.as_str()).unwrap();
+
+        dts.push(k);
+        self.parse_all();
+    }
+
+    pub fn insert_endpoint(&mut self, path: &str) {
+        let new_path_tmp = self.build_path_insert(path);
+
+        println!("{}", new_path_tmp);
+
+        let newendpoint = NewEndpoint {
+            r#type: String::from("endpoint"),
+            name: String::from("NOWY ENDPOINT"),
+            method: String::from("POST"),
+            path: new_path_tmp,
+        };
+
+        let dts = self
+            .data
+            .pointer_mut(path)
+            .unwrap()
+            .get_mut("items")
+            .and_then(serde_json::Value::as_array_mut)
+            .unwrap();
+
+        let j = serde_json::to_string(&newendpoint).unwrap();
         let k: serde_json::Value = serde_json::from_str(j.as_str()).unwrap();
 
         dts.push(k);
@@ -206,8 +253,13 @@ impl FolderTree {
 
     pub fn show_representation(&self) {
         for (idx, item) in self.items.borrow().iter().enumerate() {
-            println!("{:?}\n", item.rep);
+            println!("{:?}", item.rep);
         }
+
+        println!("\n\n\n");
+
+        let asdf = serde_json::to_string(&self.data).unwrap();
+        println!("{}", asdf);
     }
 }
 
