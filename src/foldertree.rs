@@ -185,12 +185,12 @@ impl FolderTree {
         previous_folder_path
     }
 
-    pub fn insert_folder(&mut self, path: &str) {
+    pub fn insert_folder(&mut self, path: &str, name: &str) {
         let new_path_tmp = self.build_path_insert(path);
 
         let newfolder = NewFolder {
             r#type: String::from("folder"),
-            name: String::from("ZUPELNIE NOWY"),
+            name: String::from(name),
             folded: false,
             path: new_path_tmp,
             items: vec![],
@@ -212,12 +212,12 @@ impl FolderTree {
         self.parse_all();
     }
 
-    pub fn insert_endpoint(&mut self, path: &str) {
+    pub fn insert_endpoint(&mut self, path: &str, name: &str) {
         let new_path_tmp = self.build_path_insert(path);
 
         let newendpoint = NewEndpoint {
             r#type: String::from("endpoint"),
-            name: String::from("NOWY ENDPOINT"),
+            name: String::from(name),
             method: String::from("POST"),
             path: new_path_tmp,
         };
@@ -351,6 +351,40 @@ mod tests {
         assert_eq!(
             String::from("/root/0/items/2/items/1"),
             ft.build_path_insert("/root/0/items/2")
+        );
+    }
+
+    #[test]
+    fn test_basic_folder_insertion() {
+        let mut ft = setup_ft();
+
+        ft.insert_folder("/root/0/items/1", "new folder");
+
+        assert_eq!(
+            ft.data
+                .pointer("/root/0/items/3")
+                .unwrap()
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .unwrap(),
+            "new folder"
+        );
+    }
+
+    #[test]
+    fn test_basic_endpoint_insertion() {
+        let mut ft = setup_ft();
+
+        ft.insert_endpoint("/root/0/items/2", "new endpoint");
+
+        assert_eq!(
+            ft.data
+                .pointer("/root/0/items/2/items/1")
+                .unwrap()
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .unwrap(),
+            "new endpoint"
         );
     }
 }

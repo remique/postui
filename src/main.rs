@@ -94,8 +94,8 @@ fn main() -> Result<(), io::Error> {
     let mut ft = FolderTree::from_str(k);
     ft.parse_all();
 
-    ft.insert_folder("/root/0/items/1");
-    ft.insert_endpoint("/root/0/items/3");
+    ft.insert_folder("/root/0/items/1", "nowy folder");
+    ft.insert_endpoint("/root/0/items/3", "nowy endpoint");
     ft.show_representation();
 
     let mut _app = App::new();
