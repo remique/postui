@@ -16,6 +16,7 @@ use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
 use tui::Terminal;
 
 mod app;
+mod components;
 mod foldertree;
 
 use crate::app::*;

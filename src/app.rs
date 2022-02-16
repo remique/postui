@@ -1,23 +1,21 @@
 use tui::backend::Backend;
 use tui::Frame;
 
-// To delete potem
-use tui::widgets::{Block, BorderType, Borders};
+use crate::components::ListComponent;
 
-pub struct App {}
+pub struct App {
+    list_component: ListComponent,
+}
 
 impl App {
     pub fn new() -> Self {
-        Self {}
+        Self {
+            list_component: ListComponent::new(),
+        }
     }
 
     pub fn draw<B: Backend>(&self, f: &mut Frame<B>) -> std::io::Result<()> {
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .title("Main block with round corners")
-            .border_type(BorderType::Rounded);
-
-        f.render_widget(block, f.size());
+        self.list_component.draw(f)?;
 
         Ok(())
     }
