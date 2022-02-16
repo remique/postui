@@ -2,6 +2,7 @@
 #![allow(unused_imports)]
 use serde::{Deserialize, Serialize};
 use std::io;
+use std::io::stdin;
 use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
@@ -22,13 +23,13 @@ use crate::foldertree::*;
 
 fn main() -> Result<(), io::Error> {
     // Set up terminal output
-    // let stdout = io::stdout().into_raw_mode()?;
-    // let backend = TermionBackend::new(stdout);
-    // let mut terminal = Terminal::new(backend)?;
+    let stdout = io::stdout().into_raw_mode()?;
+    let backend = TermionBackend::new(stdout);
+    let mut terminal = Terminal::new(backend)?;
 
-    // // Create a separate thread to poll stdin.
-    // // This provides non-blocking input support.
-    // let mut asi = async_stdin();
+    // Create a separate thread to poll stdin.
+    // This provides non-blocking input support.
+    let mut asi = async_stdin();
 
     let k = r#"
     {
@@ -98,14 +99,22 @@ fn main() -> Result<(), io::Error> {
     ft.insert_endpoint("/root/0/items/3", "nowy endpoint");
     ft.show_representation();
 
-    let mut _app = App::new();
+    let mut app = App::new();
 
     // Clear the terminal before first draw.
-    // terminal.clear()?;
-    // loop {
-    //     draw(&mut terminal, &app)?;
-    // }
-    Ok(())
+    terminal.clear()?;
+    loop {
+        draw(&mut terminal, &app)?;
+
+        for c in stdin().keys() {
+            match c? {
+                Key::Char('q') => {
+                    return Ok(());
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 fn draw<B: Backend>(terminal: &mut Terminal<B>, app: &App) -> io::Result<()> {

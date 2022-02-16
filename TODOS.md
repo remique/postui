@@ -4,7 +4,7 @@ Insert new stuff:
 
 - [x] Add folder insertion in FolderTree
 - [x] Add endpoint insertion in FolderTree
-- [ ] Add insertion tests
+- [x] Add insertion tests
 - [ ] Add folder folding of currently selected item (so add self.current as well or sth like that?)
 
 FolderTreeComponent (tui):

@@ -1,5 +1,5 @@
 [package]
-name = "bfui-rs"
+name = "postui"
 version = "0.1.0"
 authors = ["ejaszczuk <emj1054@gmail.com>"]
 edition = "2018"
