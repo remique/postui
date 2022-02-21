@@ -11,7 +11,7 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         Self {
-            list_component: ListComponent::new(String::from("./src/config.json")),
+            list_component: ListComponent::new(String::from("./config.json")),
         }
     }
 

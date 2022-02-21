@@ -2,31 +2,31 @@
   "root": [
     {
       "type": "folder",
-      "name": "Pierwszy",
+      "name": "First",
       "folded": false,
       "path": "/root/0",
       "items": [
         {
           "type": "endpoint",
-          "name": "Dodaj usera",
+          "name": "Add user",
           "method": "POST",
           "path": "/root/0/items/0"
         },
         {
           "type": "endpoint",
-          "name": "Zmien userow",
+          "name": "Change users",
           "method": "PUT",
           "path": "/root/0/items/1"
         },
         {
           "type": "folder",
-          "name": "Nested",
+          "name": "Nested folder",
           "folded": false,
           "path": "/root/0/items/2",
           "items": [
             {
               "type": "endpoint",
-              "name": "Nested jeszcze",
+              "name": "Another one nested",
               "method": "GET",
               "path": "/root/0/items/2/items/0"
             }
@@ -36,19 +36,19 @@
     },
     {
       "type": "endpoint",
-      "name": "Costam",
+      "name": "Whatever endpoint",
       "method": "POST",
       "path": "/root/1"
     },
     {
       "type": "folder",
-      "name": "Trzeci folder",
+      "name": "Third folder",
       "folded": false,
       "path": "/root/2",
       "items": [
         {
           "type": "endpoint",
-          "name": "Nested jeszcze",
+          "name": "Nested yet another",
           "method": "GET",
           "path": "/root/2/items/0"
         }

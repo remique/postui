@@ -32,67 +32,6 @@ fn main() -> Result<(), io::Error> {
     // This provides non-blocking input support.
     let mut asi = async_stdin();
 
-    let k = r#"
-    {
-        "root": [
-            {
-                "type": "folder",
-                "name": "Pierwszy",
-                "folded": false,
-                "path": "/root/0",
-                "items": [
-                    {
-                        "type": "endpoint",
-                        "name": "Dodaj usera",
-                        "method": "POST",
-                        "path": "/root/0/items/0"
-                    },
-                    {
-                        "type": "endpoint",
-                        "name": "Zmien userow",
-                        "method": "PUT",
-                        "path": "/root/0/items/1"
-                    },
-                    {
-                        "type": "folder",
-                        "name": "Nested",
-                        "folded": false,
-                        "path": "/root/0/items/2",
-                        "items": [
-                            {
-                                "type": "endpoint",
-                                "name": "Nested jeszcze",
-                                "method": "GET",
-                                "path": "/root/0/items/2/items/0"
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                "type": "endpoint",
-                "name": "Costam",
-                "method": "POST",
-                "path": "/root/1"
-            },
-            {
-                "type": "folder",
-                "name": "Trzeci folder",
-                "folded": false,
-                "path": "/root/2",
-                "items": [
-                    {
-                        "type": "endpoint",
-                        "name": "Nested jeszcze",
-                        "method": "GET",
-                        "path": "/root/2/items/0"
-                    }
-                ]
-            }
-        ]
-    }
-    "#;
-
     let app = App::new();
 
     // Clear the terminal before first draw.
