@@ -17,11 +17,15 @@ impl App {
 
     pub fn draw<B: Backend>(&self, f: &mut Frame<B>) -> std::io::Result<()> {
         let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(2), // Tabs
+                Constraint::Min(2),    // Main
+                Constraint::Length(2), // Cmdbar
+            ])
             .split(f.size());
 
-        self.list_component.draw(f, chunks[0])?;
+        self.list_component.draw(f, chunks[1])?;
 
         Ok(())
     }
