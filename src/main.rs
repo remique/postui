@@ -1,19 +1,18 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
+use crossterm::event::{self, Event, KeyCode};
 use serde::{Deserialize, Serialize};
 use std::io;
 use std::io::stdin;
 use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::{thread, time};
-use termion::{async_stdin, event::Key, input::TermRead, raw::IntoRawMode};
 use tui::backend::Backend;
-use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::text::Spans;
 use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
-use tui::Terminal;
+use tui::{backend::CrosstermBackend, Terminal};
 
 mod app;
 mod components;
@@ -24,13 +23,9 @@ use crate::foldertree::*;
 
 fn main() -> Result<(), io::Error> {
     // Set up terminal output
-    let stdout = io::stdout().into_raw_mode()?;
-    let backend = TermionBackend::new(stdout);
+    let stdout = io::stdout();
+    let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
-
-    // Create a separate thread to poll stdin.
-    // This provides non-blocking input support.
-    let mut asi = async_stdin();
 
     let app = App::new();
 
@@ -39,12 +34,9 @@ fn main() -> Result<(), io::Error> {
     loop {
         draw(&mut terminal, &app)?;
 
-        for c in stdin().keys() {
-            match c? {
-                Key::Char('q') => {
-                    return Ok(());
-                }
-                _ => {}
+        if let Event::Key(key) = event::read()? {
+            if let KeyCode::Char('q') = key.code {
+                return Ok(());
             }
         }
     }
