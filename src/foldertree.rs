@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::cell::RefCell;
 
 #[derive(Deserialize)]
@@ -8,6 +9,7 @@ pub struct Endpoint {
     pub r#type: String,
 }
 
+#[derive(Clone)]
 pub struct Item {
     // Representation of an item which is a symbol+name
     pub rep: String,
@@ -183,6 +185,40 @@ impl FolderTree {
         let previous_folder_path = tmp_split[0..tmp_split.len() - 1].join("/");
 
         previous_folder_path
+    }
+
+    pub fn fold_folder(&mut self, path: &str) {
+        // do not unwrap but check if its actually a folder
+        let check = self
+            .data
+            .pointer_mut(path)
+            .unwrap()
+            .as_object_mut()
+            .unwrap();
+
+        // Fix
+        if check["folded"] == serde_json::Value::Bool(false) {
+            check["folded"] = serde_json::Value::Bool(true);
+
+            self.parse_all();
+        }
+    }
+
+    pub fn unfold_folder(&mut self, path: &str) {
+        // do not unwrap but check if its actually a folder
+        let check = self
+            .data
+            .pointer_mut(path)
+            .unwrap()
+            .as_object_mut()
+            .unwrap();
+
+        // Fix
+        if check["folded"] == serde_json::Value::Bool(true) {
+            check["folded"] = serde_json::Value::Bool(false);
+
+            self.parse_all();
+        }
     }
 
     pub fn insert_folder(&mut self, path: &str, name: &str) {
