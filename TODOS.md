@@ -1,14 +1,19 @@
 # TODOs
 
-Insert new stuff:
+Might be kind of important actually:
 
-- [x] Add folder insertion in FolderTree
-- [x] Add endpoint insertion in FolderTree
-- [x] Add insertion tests
-- [ ] Add folder folding of currently selected item (so add self.current as well or sth like that?)
+- [ ] Add custom error type
+- [ ] Fix all `unwrap()` into real errors and handle them
+- [ ] Test out every negative scenario
+- [ ] _Misc:_ Change path input as string into `... -> impl Path`
 
-FolderTreeComponent (tui):
+App (tui):
 
-- [ ] Add new component and its basic functionality (such as making new obj from file, then selecting different stuff etc
-- [ ] Do a `DrawableComponent` like gitui for it and see if it displays correctl
-- [ ] Fix some stuff (Im sure there will be a lot) and check functionality
+- [ ] Add a new main window component (might move FolderTreeComponent into this)
+- [ ] Divide windows so that each component has a window
+- [ ] Make arrow functionality (so that we can move between windows)
+- [ ] Add tabs (main, history, + others...)
+
+CommandComponent:
+
+- [ ] Add Commands for each window and print it out when a window is active (think about how to do this, check: gitui)
