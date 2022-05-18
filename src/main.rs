@@ -21,6 +21,7 @@ use tui::{backend::CrosstermBackend, Terminal};
 mod app;
 mod components;
 mod foldertree;
+mod tabs;
 
 use crate::app::*;
 use crate::foldertree::*;

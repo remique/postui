@@ -1,28 +1,31 @@
 use crossterm::event::{self, Event, KeyCode};
-use tui::backend::Backend;
-use tui::layout::{Constraint, Corner, Direction, Layout};
-use tui::Frame;
+
+use tui::{
+    backend::Backend,
+    layout::{Constraint, Corner, Direction, Layout, Rect},
+    style::{Color, Style},
+    text::{Span, Spans},
+    widgets::{Block, Borders, Tabs},
+    Frame,
+};
 
 use crate::components::ListComponent;
+use crate::tabs::MainTab;
 
 pub struct App {
-    list_component: ListComponent,
+    main_tab: MainTab,
     do_quit: bool,
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
-            list_component: ListComponent::new(String::from("./config.json")),
+            main_tab: MainTab::new(),
             do_quit: false,
         }
     }
 
     pub fn event(&mut self, ev: Event) {
-        if self.list_component.event(ev) {
-            return;
-        }
-
         if ev == Event::Key(KeyCode::Char('q').into()) {
             self.do_quit = true;
             return;
@@ -33,18 +36,37 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(2), // Tabs
+                Constraint::Length(3), // Tabs
                 Constraint::Min(2),    // Main
                 Constraint::Length(2), // Cmdbar
             ])
             .split(f.size());
 
-        self.list_component.draw(f, chunks[1])?;
+        self.draw_tabs(f, chunks[0]);
+
+        self.main_tab.draw(f, chunks[1]);
 
         Ok(())
     }
 
     pub fn is_quit(&self) -> bool {
         self.do_quit
+    }
+
+    pub fn draw_tabs<B: Backend>(&self, f: &mut Frame<B>, r: Rect) {
+        let titles = vec![
+            String::from("Main"),
+            String::from("History"),
+            String::from("About"),
+        ];
+
+        let titles = titles
+            .iter()
+            .map(|item| Spans::from(vec![Span::styled(item, Style::default().fg(Color::Yellow))]))
+            .collect();
+
+        let tabs = Tabs::new(titles).block(Block::default().borders(Borders::ALL));
+
+        f.render_widget(tabs, r);
     }
 }
