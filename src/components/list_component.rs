@@ -23,8 +23,8 @@ struct StatefulList {
 }
 
 impl StatefulList {
-    fn from_path(path: String) -> StatefulList {
-        let foo = fs::read_to_string(path.as_str()).unwrap();
+    fn from_path<P: AsRef<std::path::Path>>(path: P) -> StatefulList {
+        let foo = fs::read_to_string(path).unwrap();
 
         let ft = FolderTree::from_str(foo.as_str());
         ft.parse_all();
@@ -97,9 +97,7 @@ impl StatefulList {
 }
 
 impl ListComponent {
-    pub fn new(path: String) -> Self {
-        let foo = fs::read_to_string(path.as_str()).unwrap();
-
+    pub fn new<P: AsRef<std::path::Path>>(path: P) -> Self {
         Self {
             file_path: format!("costam"),
             list_tree: StatefulList::from_path(path),
@@ -132,7 +130,7 @@ impl ListComponent {
         false
     }
 
-    pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) -> std::io::Result<()> {
+    pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) {
         let mut items: Vec<ListItem> = Vec::new();
 
         for item in self.list_tree.tree.borrow().items.borrow().iter() {
@@ -148,7 +146,5 @@ impl ListComponent {
             );
 
         f.render_stateful_widget(the_list, r, &mut self.list_tree.state);
-
-        Ok(())
     }
 }

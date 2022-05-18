@@ -37,6 +37,6 @@ impl MainTab {
         let temp_block = Block::default().borders(Borders::ALL);
         f.render_widget(temp_block, chunks[1]);
 
-        self.list_component.draw(f, chunks[0]).unwrap();
+        self.list_component.draw(f, chunks[0]);
     }
 }
