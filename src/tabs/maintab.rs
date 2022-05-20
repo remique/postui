@@ -17,7 +17,7 @@ pub struct MainTab {
 impl MainTab {
     pub fn new() -> Self {
         Self {
-            list_component: ListComponent::new(String::from("./config.json")),
+            list_component: ListComponent::new("./config.json"),
         }
     }
 
