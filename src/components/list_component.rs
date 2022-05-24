@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use tui::backend::Backend;
 use tui::layout::Rect;
 use tui::style::{Color, Modifier, Style};
@@ -104,9 +104,9 @@ impl ListComponent {
         }
     }
 
-    pub fn event(&mut self, ev: Event) -> bool {
-        if let Event::Key(e) = ev {
-            return match e.code {
+    pub fn event(&mut self, ev: KeyEvent) -> bool {
+        if let code = ev.code {
+            return match ev.code {
                 KeyCode::Down => {
                     self.list_tree.next();
                     true

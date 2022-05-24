@@ -10,6 +10,7 @@ use std::io;
 use std::io::stdin;
 use std::io::Read;
 use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 use std::{thread, time};
 use tui::backend::Backend;
 use tui::layout::{Constraint, Direction, Layout};
@@ -35,6 +36,9 @@ fn main() -> Result<(), io::Error> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    let tick_rate = Duration::from_millis(200);
+    let mut last_tick = Instant::now();
+
     let mut app = App::new();
 
     // Clear the terminal before first draw.
@@ -43,8 +47,18 @@ fn main() -> Result<(), io::Error> {
     loop {
         draw(&mut terminal, &mut app)?;
 
-        if let Event::Key(key) = event::read()? {
-            app.event(event::read()?);
+        let timeout = tick_rate
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or_else(|| Duration::from_secs(0));
+
+        if crossterm::event::poll(timeout)? {
+            if let Event::Key(event) = event::read()? {
+                app.event(event);
+            }
+        }
+
+        if last_tick.elapsed() >= tick_rate {
+            last_tick = Instant::now();
         }
 
         if app.is_quit() {
@@ -52,8 +66,8 @@ fn main() -> Result<(), io::Error> {
         }
     }
 
-    disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    disable_raw_mode()?;
     terminal.show_cursor()?;
 
     Ok(())

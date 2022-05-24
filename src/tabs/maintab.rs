@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event};
+use crossterm::event::{self, Event, KeyEvent};
 use tui::{
     backend::Backend,
     layout::{Constraint, Corner, Direction, Layout, Rect},
@@ -21,10 +21,8 @@ impl MainTab {
         }
     }
 
-    pub fn event(&mut self, ev: Event) {
-        if self.list_component.event(ev) {
-            return;
-        }
+    pub fn event(&mut self, ev: KeyEvent) {
+        self.list_component.event(ev);
     }
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) {
