@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
 
 use tui::{
     backend::Backend,
@@ -32,18 +32,37 @@ impl App {
     }
 
     pub fn event(&mut self, ev: KeyEvent) {
-        if ev == KeyEvent::from(KeyCode::Char('q')) {
-            self.do_quit = true;
-            return;
-        }
-
-        if ev == KeyEvent::from(KeyCode::Char('1')) {
-            self.current_tab = 0;
-            self.cmdbar.update_cmd(0);
-        } else if ev == KeyEvent::from(KeyCode::Char('2')) {
-            self.current_tab = 1;
-            self.cmdbar.update_cmd(1);
-        }
+        match ev {
+            // Quit by hitting 'q' or 'ctrl-c'
+            KeyEvent {
+                code: KeyCode::Char('q'),
+                modifiers: KeyModifiers::NONE,
+            }
+            | KeyEvent {
+                code: KeyCode::Char('c'),
+                modifiers: KeyModifiers::CONTROL,
+            } => {
+                self.do_quit = true;
+                return;
+            }
+            // Change to Tab 1
+            KeyEvent {
+                code: KeyCode::Char('1'),
+                modifiers: KeyModifiers::NONE,
+            } => {
+                self.current_tab = 0;
+                self.cmdbar.update_cmd(0);
+            }
+            // Change to Tab 2
+            KeyEvent {
+                code: KeyCode::Char('2'),
+                modifiers: KeyModifiers::NONE,
+            } => {
+                self.current_tab = 1;
+                self.cmdbar.update_cmd(1);
+            }
+            _ => {}
+        };
 
         if self.current_tab == 0 {
             self.main_tab.event(ev);
