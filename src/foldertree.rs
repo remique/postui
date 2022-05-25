@@ -196,11 +196,12 @@ impl FolderTree {
             .as_object_mut()
             .unwrap();
 
-        // Fix
-        if check["folded"] == serde_json::Value::Bool(false) {
-            check["folded"] = serde_json::Value::Bool(true);
+        if check["type"] == serde_json::Value::String(String::from("folder")) {
+            if check["folded"] == serde_json::Value::Bool(false) {
+                check["folded"] = serde_json::Value::Bool(true);
 
-            self.parse_all();
+                self.parse_all();
+            }
         }
     }
 
@@ -213,11 +214,12 @@ impl FolderTree {
             .as_object_mut()
             .unwrap();
 
-        // Fix
-        if check["folded"] == serde_json::Value::Bool(true) {
-            check["folded"] = serde_json::Value::Bool(false);
+        if check["type"] == serde_json::Value::String(String::from("folder")) {
+            if check["folded"] == serde_json::Value::Bool(true) {
+                check["folded"] = serde_json::Value::Bool(false);
 
-            self.parse_all();
+                self.parse_all();
+            }
         }
     }
 

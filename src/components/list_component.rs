@@ -1,15 +1,14 @@
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
-use tui::backend::Backend;
-use tui::layout::Rect;
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, BorderType, Borders, List, ListItem, ListState};
-use tui::Frame;
+use std::{cell::RefCell, fs, path::Path, rc::Rc};
+use tui::{
+    backend::Backend,
+    layout::Rect,
+    style::{Color, Modifier, Style},
+    widgets::{Block, BorderType, Borders, List, ListItem, ListState},
+    Frame,
+};
 
 use crate::foldertree::{FolderTree, Item};
-
-use std::cell::RefCell;
-use std::fs;
-use std::rc::Rc;
 
 pub struct ListComponent {
     file_path: String,
@@ -70,7 +69,7 @@ impl StatefulList {
     }
 
     fn fold_folder(&mut self) {
-        let i = match self.state.selected() {
+        match self.state.selected() {
             Some(i) => {
                 let current_item = &self.items.get(i).unwrap().obj_ref;
 
@@ -81,7 +80,7 @@ impl StatefulList {
     }
 
     fn unfold_folder(&mut self) {
-        let i = match self.state.selected() {
+        match self.state.selected() {
             Some(i) => {
                 let current_item = &self.items.get(i).unwrap().obj_ref;
 
@@ -97,7 +96,7 @@ impl StatefulList {
 }
 
 impl ListComponent {
-    pub fn new<P: AsRef<std::path::Path>>(path: P) -> Self {
+    pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
             file_path: format!("costam"),
             list_tree: StatefulList::from_path(path),
@@ -105,27 +104,25 @@ impl ListComponent {
     }
 
     pub fn event(&mut self, ev: KeyEvent) -> bool {
-        if let code = ev.code {
-            return match ev.code {
-                KeyCode::Down => {
-                    self.list_tree.next();
-                    true
-                }
-                KeyCode::Up => {
-                    self.list_tree.previous();
-                    true
-                }
-                KeyCode::Left => {
-                    self.list_tree.fold_folder();
-                    true
-                }
-                KeyCode::Right => {
-                    self.list_tree.unfold_folder();
-                    true
-                }
-                _ => false,
-            };
-        }
+        match ev.code {
+            KeyCode::Down => {
+                self.list_tree.next();
+                true
+            }
+            KeyCode::Up => {
+                self.list_tree.previous();
+                true
+            }
+            KeyCode::Left => {
+                self.list_tree.fold_folder();
+                true
+            }
+            KeyCode::Right => {
+                self.list_tree.unfold_folder();
+                true
+            }
+            _ => false,
+        };
 
         false
     }

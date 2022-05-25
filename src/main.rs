@@ -1,23 +1,28 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
-use crossterm::event::{self, Event, KeyCode};
-use crossterm::execute;
-use crossterm::terminal::{
-    disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen,
+
+use crossterm::{
+    event::{self, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use serde::{Deserialize, Serialize};
-use std::io;
-use std::io::stdin;
-use std::io::Read;
-use std::sync::{Arc, Mutex};
-use std::time::{Duration, Instant};
-use std::{thread, time};
-use tui::backend::Backend;
-use tui::layout::{Constraint, Direction, Layout};
-use tui::style::{Color, Modifier, Style};
-use tui::text::Spans;
-use tui::widgets::{Block, Borders, List, ListItem, ListState, Paragraph};
-use tui::{backend::CrosstermBackend, Terminal};
+use std::{
+    io,
+    io::{stdin, Read},
+    sync::{Arc, Mutex},
+    thread, time,
+    time::{Duration, Instant},
+};
+use tui::{
+    backend::Backend,
+    backend::CrosstermBackend,
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Modifier, Style},
+    text::Spans,
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    Terminal,
+};
 
 mod app;
 mod components;
