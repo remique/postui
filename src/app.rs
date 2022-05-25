@@ -9,12 +9,13 @@ use tui::{
     Frame,
 };
 
-use crate::components::ListComponent;
+use crate::components::{CommandComponent, ListComponent};
 use crate::tabs::{HistoryTab, MainTab};
 
 pub struct App {
     main_tab: MainTab,
     history_tab: HistoryTab,
+    cmdbar: CommandComponent,
     do_quit: bool,
     current_tab: usize,
 }
@@ -24,6 +25,7 @@ impl App {
         Self {
             main_tab: MainTab::new(),
             history_tab: HistoryTab::new(),
+            cmdbar: CommandComponent::new(),
             do_quit: false,
             current_tab: 0,
         }
@@ -37,8 +39,10 @@ impl App {
 
         if ev == KeyEvent::from(KeyCode::Char('1')) {
             self.current_tab = 0;
+            self.cmdbar.update_cmd(0);
         } else if ev == KeyEvent::from(KeyCode::Char('2')) {
             self.current_tab = 1;
+            self.cmdbar.update_cmd(1);
         }
 
         if self.current_tab == 0 {
@@ -59,8 +63,14 @@ impl App {
         self.draw_tabs(f, chunks[0]);
 
         match self.current_tab {
-            0 => self.main_tab.draw(f, chunks[1]),
-            1 => self.history_tab.draw(f, chunks[1]),
+            0 => {
+                self.main_tab.draw(f, chunks[1]);
+                self.cmdbar.draw(f, chunks[2]);
+            }
+            1 => {
+                self.history_tab.draw(f, chunks[1]);
+                self.cmdbar.draw(f, chunks[2]);
+            }
             _ => {}
         };
 
