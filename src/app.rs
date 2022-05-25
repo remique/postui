@@ -3,7 +3,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use tui::{
     backend::Backend,
     layout::{Constraint, Corner, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Tabs},
     Frame,
@@ -80,10 +80,13 @@ impl App {
 
         let titles = titles
             .iter()
-            .map(|item| Spans::from(vec![Span::styled(item, Style::default().fg(Color::Yellow))]))
+            .map(|item| Spans::from(vec![Span::styled(item, Style::default())]))
             .collect();
 
-        let tabs = Tabs::new(titles).block(Block::default().borders(Borders::ALL));
+        let tabs = Tabs::new(titles)
+            .select(self.current_tab)
+            .block(Block::default().borders(Borders::ALL))
+            .highlight_style(Style::default().add_modifier(Modifier::BOLD));
 
         f.render_widget(tabs, r);
     }
