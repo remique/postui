@@ -14,6 +14,9 @@ pub struct Item {
     // Representation of an item which is a symbol+name
     pub rep: String,
 
+    // Type of an item
+    pub r#type: String,
+
     // A string path in order to access a specific Item in a Tree
     pub obj_ref: String,
 }
@@ -94,6 +97,10 @@ impl FolderTree {
                             symbol,
                             val.get("name").and_then(serde_json::Value::as_str).unwrap()
                         )),
+                        r#type: String::from(format!(
+                            "{}",
+                            val.get("type").and_then(serde_json::Value::as_str).unwrap()
+                        )),
                         obj_ref: val
                             .get("path")
                             .and_then(serde_json::Value::as_str)
@@ -124,6 +131,7 @@ impl FolderTree {
                 "{}  {} {}",
                 ind, cur_endpoint.method, cur_endpoint.name
             )),
+            r#type: String::from("endpoint"),
             obj_ref: val
                 .get("path")
                 .and_then(serde_json::Value::as_str)

@@ -131,7 +131,13 @@ impl ListComponent {
         let mut items: Vec<ListItem> = Vec::new();
 
         for item in self.list_tree.tree.borrow().items.borrow().iter() {
-            items.push(ListItem::new(format!("{}", item.rep.as_str())))
+            let style = match item.r#type.as_str() {
+                "folder" => Style::default().fg(Color::Yellow),
+                "endpoint" => Style::default(),
+                _ => Style::default(),
+            };
+
+            items.push(ListItem::new(format!("{}", item.rep.as_str())).style(style))
         }
 
         let the_list = List::new(items)
