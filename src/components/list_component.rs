@@ -4,6 +4,7 @@ use tui::{
     backend::Backend,
     layout::Rect,
     style::{Color, Modifier, Style},
+    text::{Span, Spans},
     widgets::{Block, BorderType, Borders, List, ListItem, ListState},
     Frame,
 };
@@ -43,7 +44,7 @@ impl StatefulList {
     fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= self.items.len() - 1 {
+                if i >= self.tree.borrow().items.borrow().len() - 1 {
                     0
                 } else {
                     i + 1
@@ -58,7 +59,7 @@ impl StatefulList {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    self.tree.borrow().items.borrow().len() - 1
                 } else {
                     i - 1
                 }
@@ -132,12 +133,32 @@ impl ListComponent {
 
         for item in self.list_tree.tree.borrow().items.borrow().iter() {
             let style = match item.r#type.as_str() {
-                "folder" => Style::default().fg(Color::Yellow),
+                "folder" => Style::default().add_modifier(Modifier::BOLD),
                 "endpoint" => Style::default(),
                 _ => Style::default(),
             };
 
-            items.push(ListItem::new(format!("{}", item.rep.as_str())).style(style))
+            let split_item = item.rep.split_inclusive(" ").collect::<Vec<&str>>();
+
+            let inside = split_item
+                .iter()
+                .map(|item| match item {
+                    // This is a bit ugly, but okay
+                    &"POST " => {
+                        Span::styled(String::from(*item), Style::default().fg(Color::Green))
+                    }
+                    &"GET " => {
+                        Span::styled(String::from(*item), Style::default().fg(Color::LightYellow))
+                    }
+                    &"PUT " => Span::styled(String::from(*item), Style::default().fg(Color::Blue)),
+                    &"DELETE " => {
+                        Span::styled(String::from(*item), Style::default().fg(Color::Red))
+                    }
+                    _ => Span::styled(String::from(*item), Style::default()),
+                })
+                .collect::<Vec<Span>>();
+
+            items.push(ListItem::new(vec![Spans::from(inside)]).style(style))
         }
 
         let the_list = List::new(items)
