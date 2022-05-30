@@ -1,15 +1,15 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 use tui::{
     backend::Backend,
-    layout::{Constraint, Corner, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Modifier, Style},
     text::{Span, Spans},
     widgets::{Block, Borders, Tabs},
     Frame,
 };
 
-use crate::components::{CommandComponent, ListComponent};
+use crate::components::CommandComponent;
 use crate::tabs::{HistoryTab, MainTab};
 
 pub struct App {

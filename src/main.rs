@@ -1,28 +1,13 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
-
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use serde::{Deserialize, Serialize};
 use std::{
     io,
-    io::{stdin, Read},
-    sync::{Arc, Mutex},
-    thread, time,
     time::{Duration, Instant},
 };
-use tui::{
-    backend::Backend,
-    backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Modifier, Style},
-    text::Spans,
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
-    Terminal,
-};
+use tui::{backend::Backend, backend::CrosstermBackend, Terminal};
 
 mod app;
 mod components;
@@ -30,7 +15,6 @@ mod foldertree;
 mod tabs;
 
 use crate::app::*;
-use crate::foldertree::*;
 
 fn main() -> Result<(), io::Error> {
     enable_raw_mode()?;

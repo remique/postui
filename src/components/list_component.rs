@@ -1,11 +1,11 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent};
 use std::{cell::RefCell, fs, path::Path, rc::Rc};
 use tui::{
     backend::Backend,
     layout::Rect,
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, List, ListItem, ListState},
+    widgets::{Block, Borders, List, ListItem, ListState},
     Frame,
 };
 

@@ -1,9 +1,9 @@
 use tui::{
     backend::Backend,
     layout::{Alignment, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Style},
     text::{Span, Spans},
-    widgets::{Block, BorderType, Borders, List, ListItem, ListState, Paragraph},
+    widgets::{Block, Paragraph},
     Frame,
 };
 

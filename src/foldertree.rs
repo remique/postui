@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::cell::RefCell;
 
 #[derive(Deserialize)]
@@ -290,12 +289,6 @@ impl FolderTree {
             .unwrap();
 
         self.parse(arr, indent);
-    }
-
-    pub fn show_representation(&self) {
-        for item in self.items.borrow().iter() {
-            println!("{:?}", item.rep);
-        }
     }
 }
 

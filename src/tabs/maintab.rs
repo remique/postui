@@ -1,10 +1,8 @@
-use crossterm::event::{self, Event, KeyEvent};
+use crossterm::event::KeyEvent;
 use tui::{
     backend::Backend,
-    layout::{Constraint, Corner, Direction, Layout, Rect},
-    style::{Color, Style},
-    text::{Span, Spans},
-    widgets::{Block, Borders, Tabs},
+    layout::{Constraint, Direction, Layout, Rect},
+    widgets::{Block, Borders},
     Frame,
 };
 
