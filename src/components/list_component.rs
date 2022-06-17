@@ -5,7 +5,7 @@ use tui::{
     layout::Rect,
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, List, ListItem, ListState},
+    widgets::{Block, BorderType, Borders, List, ListItem, ListState},
     Frame,
 };
 
@@ -14,6 +14,7 @@ use crate::foldertree::{FolderTree, Item};
 pub struct ListComponent {
     file_path: String,
     list_tree: StatefulList,
+    pub focused: bool,
 }
 
 struct StatefulList {
@@ -101,6 +102,7 @@ impl ListComponent {
         Self {
             file_path: format!("costam"),
             list_tree: StatefulList::from_path(path),
+            focused: false,
         }
     }
 
@@ -161,8 +163,17 @@ impl ListComponent {
             items.push(ListItem::new(vec![Spans::from(inside)]).style(style))
         }
 
+        let border_type = match self.focused {
+            true => BorderType::Thick,
+            false => BorderType::Plain,
+        };
+
         let the_list = List::new(items)
-            .block(Block::default().borders(Borders::ALL))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .border_type(border_type),
+            )
             .highlight_style(
                 Style::default()
                     .bg(Color::DarkGray)
