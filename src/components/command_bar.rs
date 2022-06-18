@@ -7,12 +7,8 @@ use tui::{
     Frame,
 };
 
-pub struct CommandComponent {
-    tab: usize,
-}
-
 #[derive(Clone)]
-enum CommandType {
+pub enum CommandType {
     // Command containing a value
     Command(String),
 
@@ -20,32 +16,23 @@ enum CommandType {
     Break,
 }
 
+pub struct CommandComponent {
+    tab: usize,
+    list: Vec<CommandType>,
+}
+
 impl CommandComponent {
-    pub fn new() -> Self {
-        Self { tab: 0 }
+    pub fn new(list: Vec<CommandType>) -> Self {
+        Self { tab: 0, list }
+    }
+
+    pub fn cmds_from(&mut self, input: Vec<CommandType>) {
+        self.list = input;
     }
 
     // TODO: Do not hardcode commands, but get them from components
     fn get_cmds(&self) -> Vec<CommandType> {
-        match self.tab {
-            0 => vec![
-                CommandType::Command(String::from("Test command [a]")),
-                CommandType::Break,
-                CommandType::Command(String::from("Second [b]")),
-                CommandType::Break,
-                CommandType::Command(String::from("Reset item [c]")),
-            ],
-            1 => vec![
-                CommandType::Command(String::from("Another page [d]")),
-                CommandType::Break,
-                CommandType::Command(String::from("Whatever [b]")),
-                CommandType::Break,
-                CommandType::Command(String::from("Push [p]")),
-                CommandType::Break,
-                CommandType::Command(String::from("Move [m]")),
-            ],
-            _ => vec![],
-        }
+        self.list.clone()
     }
 
     pub fn update_cmd(&mut self, current_tab: usize) {

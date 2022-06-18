@@ -6,24 +6,31 @@ use tui::{
     Frame,
 };
 
-use crate::components::ListComponent;
+use crate::components::{CommandType, ListComponent, MainPaneComponent};
 
 pub struct MainTab {
     list_component: ListComponent,
+    main_pane: MainPaneComponent,
     focus: Focus,
+    pub current_cmds: Vec<CommandType>,
 }
 
 #[derive(PartialEq)]
 enum Focus {
     FolderTreeWindow,
-    MainWindow, // This will be changed later on
+    MainPane, // This will be changed later on
 }
 
 impl MainTab {
     pub fn new() -> Self {
+        let list_component = ListComponent::new("./config.json");
+        let current_cmds = list_component.generate_cmds();
+
         Self {
-            list_component: ListComponent::new("./config.json"),
-            focus: Focus::MainWindow,
+            list_component,
+            current_cmds,
+            main_pane: MainPaneComponent::new(),
+            focus: Focus::MainPane,
         }
     }
 
@@ -32,10 +39,14 @@ impl MainTab {
             KeyCode::Left => {
                 self.focus = Focus::FolderTreeWindow;
                 self.list_component.focused = true;
+                self.main_pane.focused = false;
+                self.current_cmds = self.list_component.generate_cmds();
             }
             KeyCode::Right => {
-                self.focus = Focus::MainWindow;
+                self.focus = Focus::MainPane;
                 self.list_component.focused = false;
+                self.main_pane.focused = true;
+                self.current_cmds = self.main_pane.generate_cmds();
             }
             _ => {}
         };
@@ -51,18 +62,7 @@ impl MainTab {
             .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
             .split(r);
 
-        let block_border_type = match self.focus {
-            Focus::MainWindow => BorderType::Thick,
-            Focus::FolderTreeWindow => BorderType::Plain,
-        };
-
-        // TODO: Make a proper main window
-        let temp_block = Block::default()
-            .borders(Borders::ALL)
-            .border_type(block_border_type);
-
-        f.render_widget(temp_block, chunks[1]);
-
         self.list_component.draw(f, chunks[0]);
+        self.main_pane.draw(f, chunks[1]);
     }
 }

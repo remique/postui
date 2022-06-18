@@ -23,10 +23,13 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
+        let main_tab = MainTab::new();
+        let cmdbar = CommandComponent::new(main_tab.current_cmds.clone());
+
         Self {
-            main_tab: MainTab::new(),
+            main_tab,
             history_tab: HistoryTab::new(),
-            cmdbar: CommandComponent::new(),
+            cmdbar,
             folder_popup: FolderPopup::new(),
             do_quit: false,
             current_tab: 0,
@@ -74,6 +77,7 @@ impl App {
 
         if self.current_tab == 0 {
             self.main_tab.event(ev);
+            self.cmdbar.cmds_from(self.main_tab.current_cmds.clone());
         }
     }
 

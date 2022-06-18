@@ -9,6 +9,7 @@ use tui::{
     Frame,
 };
 
+use crate::components::CommandType;
 use crate::foldertree::{FolderTree, Item};
 
 pub struct ListComponent {
@@ -181,5 +182,13 @@ impl ListComponent {
             );
 
         f.render_stateful_widget(the_list, r, &mut self.list_tree.state);
+    }
+
+    pub fn generate_cmds(&self) -> Vec<CommandType> {
+        vec![
+            CommandType::Command(String::from("hehe [x]")),
+            CommandType::Break,
+            CommandType::Command(String::from("lmao [y]")),
+        ]
     }
 }
