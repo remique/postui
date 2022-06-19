@@ -2,7 +2,6 @@ use crossterm::event::{KeyCode, KeyEvent};
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
-    widgets::{Block, BorderType, Borders},
     Frame,
 };
 
@@ -35,25 +34,31 @@ impl MainTab {
     }
 
     pub fn event(&mut self, ev: KeyEvent) {
-        match ev.code {
-            KeyCode::Left => {
-                self.focus = Focus::FolderTreeWindow;
-                self.list_component.focused = true;
-                self.main_pane.focused = false;
-                self.current_cmds = self.list_component.generate_cmds();
-            }
-            KeyCode::Right => {
-                self.focus = Focus::MainPane;
-                self.list_component.focused = false;
-                self.main_pane.focused = true;
-                self.current_cmds = self.main_pane.generate_cmds();
-            }
-            _ => {}
-        };
+        // TODO: This shit needs refactor
+        match self.focus {
+            Focus::FolderTreeWindow => {
+                let can_unfold = self.list_component.list_tree.can_unfold_folder();
 
-        // if self.focus == Focus::FolderTreeWindow {
-        //     self.list_component.event(ev);
-        // }
+                if ev.code == KeyCode::Right && can_unfold == false {
+                    self.focus = Focus::MainPane;
+                    self.list_component.focused = false;
+                    self.main_pane.focused = true;
+                    self.current_cmds = self.main_pane.generate_cmds();
+                } else {
+                    self.list_component.event(ev);
+                }
+            }
+            Focus::MainPane => {
+                if ev.code == KeyCode::Left {
+                    self.focus = Focus::FolderTreeWindow;
+                    self.list_component.focused = true;
+                    self.main_pane.focused = false;
+                    self.current_cmds = self.list_component.generate_cmds();
+                } else {
+                    // self.main_pane.event(ev);
+                }
+            }
+        };
     }
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) {

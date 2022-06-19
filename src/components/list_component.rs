@@ -14,11 +14,11 @@ use crate::foldertree::{FolderTree, Item};
 
 pub struct ListComponent {
     file_path: String,
-    list_tree: StatefulList,
+    pub list_tree: StatefulList,
     pub focused: bool,
 }
 
-struct StatefulList {
+pub struct StatefulList {
     state: ListState,
     tree: Rc<RefCell<FolderTree>>,
     items: Vec<Item>,
@@ -71,6 +71,32 @@ impl StatefulList {
         self.state.select(Some(i));
     }
 
+    fn can_fold_folder(&self) -> bool {
+        let result = match self.state.selected() {
+            Some(i) => {
+                let current_item = &self.items.get(i).unwrap().obj_ref;
+
+                self.tree.borrow().can_fold_folder(current_item.as_str())
+            }
+            None => false,
+        };
+
+        result
+    }
+
+    pub fn can_unfold_folder(&self) -> bool {
+        let result = match self.state.selected() {
+            Some(i) => {
+                let current_item = &self.items.get(i).unwrap().obj_ref;
+
+                self.tree.borrow().can_unfold_folder(current_item.as_str())
+            }
+            None => false,
+        };
+
+        result
+    }
+
     fn fold_folder(&mut self) {
         match self.state.selected() {
             Some(i) => {
@@ -107,28 +133,22 @@ impl ListComponent {
         }
     }
 
-    pub fn event(&mut self, ev: KeyEvent) -> bool {
+    pub fn event(&mut self, ev: KeyEvent) {
         match ev.code {
             KeyCode::Down => {
                 self.list_tree.next();
-                true
             }
             KeyCode::Up => {
                 self.list_tree.previous();
-                true
             }
             KeyCode::Left => {
                 self.list_tree.fold_folder();
-                true
             }
             KeyCode::Right => {
                 self.list_tree.unfold_folder();
-                true
             }
-            _ => false,
+            _ => {}
         };
-
-        false
     }
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) {

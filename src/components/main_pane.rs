@@ -13,7 +13,7 @@ pub struct MainPaneComponent {
 
 impl MainPaneComponent {
     pub fn new() -> Self {
-        Self { focused: false }
+        Self { focused: true }
     }
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) {

@@ -194,6 +194,30 @@ impl FolderTree {
         previous_folder_path
     }
 
+    pub fn can_fold_folder(&self, path: &str) -> bool {
+        let check = self.data.pointer(path).unwrap().as_object().unwrap();
+
+        if check["type"] == serde_json::Value::String(String::from("folder")) {
+            if check["folded"] == serde_json::Value::Bool(false) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    pub fn can_unfold_folder(&self, path: &str) -> bool {
+        let check = self.data.pointer(path).unwrap().as_object().unwrap();
+
+        if check["type"] == serde_json::Value::String(String::from("folder")) {
+            if check["folded"] == serde_json::Value::Bool(true) {
+                return true;
+            }
+        }
+
+        false
+    }
+
     pub fn fold_folder(&mut self, path: &str) {
         // do not unwrap but check if its actually a folder
         let check = self
