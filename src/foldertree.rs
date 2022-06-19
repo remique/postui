@@ -67,7 +67,7 @@ impl FolderTree {
         self.parse(json_data, 0);
     }
 
-    fn parse(&self, json_data: &Vec<serde_json::Value>, indent: i32) {
+    fn parse(&self, json_data: &[serde_json::Value], indent: i32) {
         let mut temp_vec: Vec<Item> = Vec::new();
 
         for data in json_data.iter() {
@@ -90,16 +90,17 @@ impl FolderTree {
                     };
 
                     let temp_obj: Item = Item {
-                        rep: String::from(format!(
+                        rep: format!(
                             "{}{} {}",
                             construct_indent(indent),
                             symbol,
                             val.get("name").and_then(serde_json::Value::as_str).unwrap()
-                        )),
-                        r#type: String::from(format!(
-                            "{}",
-                            val.get("type").and_then(serde_json::Value::as_str).unwrap()
-                        )),
+                        ),
+                        r#type: val
+                            .get("type")
+                            .and_then(serde_json::Value::as_str)
+                            .unwrap()
+                            .to_string(),
                         obj_ref: val
                             .get("path")
                             .and_then(serde_json::Value::as_str)
@@ -126,10 +127,7 @@ impl FolderTree {
         let ind = construct_indent(indent);
 
         let temp_obj: Item = Item {
-            rep: String::from(format!(
-                "{}  {} {}",
-                ind, cur_endpoint.method, cur_endpoint.name
-            )),
+            rep: format!("{}  {} {}", ind, cur_endpoint.method, cur_endpoint.name),
             r#type: String::from("endpoint"),
             obj_ref: val
                 .get("path")
@@ -156,8 +154,7 @@ impl FolderTree {
                 .get("items")
                 .and_then(serde_json::Value::as_array)
                 .unwrap()
-                .len()
-                == 0
+                .is_empty()
             {
                 // We append /items/0 as it is the first item in the array
                 new.push_str(format!("/items/{}", 0).as_str());
@@ -189,18 +186,17 @@ impl FolderTree {
 
     fn get_truncated_path(&self, path: &str) -> String {
         let tmp_split: Vec<&str> = path.split('/').collect();
-        let previous_folder_path = tmp_split[0..tmp_split.len() - 1].join("/");
 
-        previous_folder_path
+        tmp_split[0..tmp_split.len() - 1].join("/")
     }
 
     pub fn can_fold_folder(&self, path: &str) -> bool {
         let check = self.data.pointer(path).unwrap().as_object().unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder")) {
-            if check["folded"] == serde_json::Value::Bool(false) {
-                return true;
-            }
+        if check["type"] == serde_json::Value::String(String::from("folder"))
+            && check["folded"] == serde_json::Value::Bool(false)
+        {
+            return true;
         }
 
         false
@@ -209,10 +205,10 @@ impl FolderTree {
     pub fn can_unfold_folder(&self, path: &str) -> bool {
         let check = self.data.pointer(path).unwrap().as_object().unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder")) {
-            if check["folded"] == serde_json::Value::Bool(true) {
-                return true;
-            }
+        if check["type"] == serde_json::Value::String(String::from("folder"))
+            && check["folded"] == serde_json::Value::Bool(true)
+        {
+            return true;
         }
 
         false
@@ -227,12 +223,12 @@ impl FolderTree {
             .as_object_mut()
             .unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder")) {
-            if check["folded"] == serde_json::Value::Bool(false) {
-                check["folded"] = serde_json::Value::Bool(true);
+        if check["type"] == serde_json::Value::String(String::from("folder"))
+            && check["folded"] == serde_json::Value::Bool(false)
+        {
+            check["folded"] = serde_json::Value::Bool(true);
 
-                self.parse_all();
-            }
+            self.parse_all();
         }
     }
 
@@ -245,12 +241,12 @@ impl FolderTree {
             .as_object_mut()
             .unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder")) {
-            if check["folded"] == serde_json::Value::Bool(true) {
-                check["folded"] = serde_json::Value::Bool(false);
+        if check["type"] == serde_json::Value::String(String::from("folder"))
+            && check["folded"] == serde_json::Value::Bool(true)
+        {
+            check["folded"] = serde_json::Value::Bool(false);
 
-                self.parse_all();
-            }
+            self.parse_all();
         }
     }
 

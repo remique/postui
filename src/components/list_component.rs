@@ -26,9 +26,9 @@ pub struct StatefulList {
 
 impl StatefulList {
     fn from_path<P: AsRef<std::path::Path>>(path: P) -> StatefulList {
-        let foo = fs::read_to_string(path).unwrap();
+        let path_to_string = fs::read_to_string(path).unwrap();
 
-        let ft = FolderTree::from_str(foo.as_str());
+        let ft = FolderTree::from_str(path_to_string.as_str());
         ft.parse_all();
 
         let mut new_state = ListState::default();
@@ -72,51 +72,39 @@ impl StatefulList {
     }
 
     fn can_fold_folder(&self) -> bool {
-        let result = match self.state.selected() {
-            Some(i) => {
-                let current_item = &self.items.get(i).unwrap().obj_ref;
+        if let Some(i) = self.state.selected() {
+            let current_item = &self.items.get(i).unwrap().obj_ref;
 
-                self.tree.borrow().can_fold_folder(current_item.as_str())
-            }
-            None => false,
-        };
+            return self.tree.borrow().can_fold_folder(current_item.as_str());
+        }
 
-        result
+        false
     }
 
     pub fn can_unfold_folder(&self) -> bool {
-        let result = match self.state.selected() {
-            Some(i) => {
-                let current_item = &self.items.get(i).unwrap().obj_ref;
+        if let Some(i) = self.state.selected() {
+            let current_item = &self.items.get(i).unwrap().obj_ref;
 
-                self.tree.borrow().can_unfold_folder(current_item.as_str())
-            }
-            None => false,
-        };
+            return self.tree.borrow().can_unfold_folder(current_item.as_str());
+        }
 
-        result
+        false
     }
 
     fn fold_folder(&mut self) {
-        match self.state.selected() {
-            Some(i) => {
-                let current_item = &self.items.get(i).unwrap().obj_ref;
+        if let Some(i) = self.state.selected() {
+            let current_item = &self.items.get(i).unwrap().obj_ref;
 
-                self.tree.borrow_mut().fold_folder(current_item.as_str());
-            }
-            None => {}
-        };
+            self.tree.borrow_mut().fold_folder(current_item.as_str());
+        }
     }
 
     fn unfold_folder(&mut self) {
-        match self.state.selected() {
-            Some(i) => {
-                let current_item = &self.items.get(i).unwrap().obj_ref;
+        if let Some(i) = self.state.selected() {
+            let current_item = &self.items.get(i).unwrap().obj_ref;
 
-                self.tree.borrow_mut().unfold_folder(current_item.as_str());
-            }
-            None => {}
-        };
+            self.tree.borrow_mut().unfold_folder(current_item.as_str());
+        }
     }
 
     fn unselect(&mut self) {
@@ -127,7 +115,7 @@ impl StatefulList {
 impl ListComponent {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            file_path: format!("costam"),
+            file_path: "temp_file_path".to_string(),
             list_tree: StatefulList::from_path(path),
             focused: false,
         }
@@ -165,18 +153,14 @@ impl ListComponent {
 
             let inside = split_item
                 .iter()
-                .map(|item| match item {
+                .map(|item| match *item {
                     // This is a bit ugly, but okay
-                    &"POST " => {
-                        Span::styled(String::from(*item), Style::default().fg(Color::Green))
-                    }
-                    &"GET " => {
+                    "POST " => Span::styled(String::from(*item), Style::default().fg(Color::Green)),
+                    "GET " => {
                         Span::styled(String::from(*item), Style::default().fg(Color::LightYellow))
                     }
-                    &"PUT " => Span::styled(String::from(*item), Style::default().fg(Color::Blue)),
-                    &"DELETE " => {
-                        Span::styled(String::from(*item), Style::default().fg(Color::Red))
-                    }
+                    "PUT " => Span::styled(String::from(*item), Style::default().fg(Color::Blue)),
+                    "DELETE " => Span::styled(String::from(*item), Style::default().fg(Color::Red)),
                     _ => Span::styled(String::from(*item), Style::default()),
                 })
                 .collect::<Vec<Span>>();

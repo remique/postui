@@ -39,7 +39,7 @@ impl MainTab {
             Focus::FolderTreeWindow => {
                 let can_unfold = self.list_component.list_tree.can_unfold_folder();
 
-                if ev.code == KeyCode::Right && can_unfold == false {
+                if ev.code == KeyCode::Right && !can_unfold {
                     self.focus = Focus::MainPane;
                     self.list_component.focused = false;
                     self.main_pane.focused = true;

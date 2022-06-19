@@ -40,7 +40,7 @@ impl CommandComponent {
     }
 
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) {
-        let cloned = self.get_cmds().clone();
+        let cloned = self.get_cmds();
 
         let spans_inside = cloned
             .iter()
