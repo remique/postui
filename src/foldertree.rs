@@ -190,6 +190,16 @@ impl FolderTree {
         tmp_split[0..tmp_split.len() - 1].join("/")
     }
 
+    pub fn get_current_from_path(&self, path: &str) -> Option<String> {
+        let check = self.data.pointer(path).unwrap().as_object().unwrap();
+
+        if check["type"] == serde_json::Value::String(String::from("endpoint")) {
+            return Some(format!("{} {}", check["method"], check["name"]));
+        }
+
+        None
+    }
+
     pub fn can_fold_folder(&self, path: &str) -> bool {
         let check = self.data.pointer(path).unwrap().as_object().unwrap();
 

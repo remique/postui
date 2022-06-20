@@ -46,6 +46,10 @@ impl MainTab {
                     self.current_cmds = self.main_pane.generate_cmds();
                 } else {
                     self.list_component.event(ev);
+
+                    if let Some(i) = self.list_component.list_tree.get_current_endpoint() {
+                        self.main_pane.current_endpoint = i;
+                    }
                 }
             }
             Focus::MainPane => {

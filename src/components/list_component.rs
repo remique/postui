@@ -71,6 +71,19 @@ impl StatefulList {
         self.state.select(Some(i));
     }
 
+    pub fn get_current_endpoint(&self) -> Option<String> {
+        if let Some(i) = self.state.selected() {
+            let current_item = &self.items.get(i).unwrap().obj_ref;
+
+            return self
+                .tree
+                .borrow()
+                .get_current_from_path(current_item.as_str());
+        }
+
+        None
+    }
+
     fn can_fold_folder(&self) -> bool {
         if let Some(i) = self.state.selected() {
             let current_item = &self.items.get(i).unwrap().obj_ref;
