@@ -10,13 +10,15 @@
           "type": "endpoint",
           "name": "Add user",
           "method": "POST",
-          "path": "/root/0/items/0"
+          "path": "/root/0/items/0",
+          "url": "http://localhost:3010/add_user"
         },
         {
           "type": "endpoint",
           "name": "Change users",
           "method": "PUT",
-          "path": "/root/0/items/1"
+          "path": "/root/0/items/1",
+          "url": "http://localhost:3003/change_user"
         },
         {
           "type": "folder",
@@ -28,7 +30,8 @@
               "type": "endpoint",
               "name": "Another one nested",
               "method": "GET",
-              "path": "/root/0/items/2/items/0"
+              "path": "/root/0/items/2/items/0",
+              "url": "http://localhost:3002/another_nested"
             }
           ]
         }
@@ -38,7 +41,8 @@
       "type": "endpoint",
       "name": "Whatever endpoint",
       "method": "POST",
-      "path": "/root/1"
+      "path": "/root/1",
+      "url": "http://localhost:3002/whatever/endpoint"
     },
     {
       "type": "folder",
@@ -50,7 +54,8 @@
           "type": "endpoint",
           "name": "Nested yet another",
           "method": "GET",
-          "path": "/root/2/items/0"
+          "path": "/root/2/items/0",
+          "url": "http://localhost:3322/yetanother"
         }
       ]
     }

@@ -6,6 +6,7 @@ pub struct Endpoint {
     pub method: String,
     pub name: String,
     pub r#type: String,
+    pub url: String,
 }
 
 #[derive(Clone)]
@@ -44,6 +45,7 @@ struct NewEndpoint {
     name: String,
     method: String,
     path: String,
+    url: String,
 }
 
 impl FolderTree {
@@ -194,7 +196,7 @@ impl FolderTree {
         let check = self.data.pointer(path).unwrap().as_object().unwrap();
 
         if check["type"] == serde_json::Value::String(String::from("endpoint")) {
-            return Some(format!("{} {}", check["method"], check["name"]));
+            return Some(format!("{} | {}", check["method"], check["url"]));
         }
 
         None
@@ -295,6 +297,7 @@ impl FolderTree {
             name: String::from(name),
             method: String::from("POST"),
             path: new_path_tmp,
+            url: String::from("TODO"),
         };
 
         let dts = self
