@@ -35,12 +35,12 @@ impl MainPaneComponent {
         let tmp_vect = vec![self.current_endpoint.as_str()];
         let spans_inside = tmp_vect
             .iter()
-            .map(|item| Span::raw(*item))
+            .map(|item| Span::raw(item.replace("\"", "")))
             .collect::<Vec<Span>>();
 
         let text = Spans::from(spans_inside);
 
-        let temp_block = Paragraph::new(text).block(Block::default());
+        let temp_block = Paragraph::new(text).block(Block::default().borders(Borders::ALL));
 
         let temp_block2 = Block::default()
             .borders(Borders::ALL)

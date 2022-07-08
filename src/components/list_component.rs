@@ -119,10 +119,6 @@ impl StatefulList {
             self.tree.borrow_mut().unfold_folder(current_item.as_str());
         }
     }
-
-    fn unselect(&mut self) {
-        self.state.select(None);
-    }
 }
 
 impl ListComponent {
@@ -186,17 +182,21 @@ impl ListComponent {
             false => BorderType::Plain,
         };
 
+        let highlight_style = if self.focused {
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD)
+        } else {
+            Style::default().add_modifier(Modifier::BOLD)
+        };
+
         let the_list = List::new(items)
             .block(
                 Block::default()
                     .borders(Borders::ALL)
                     .border_type(border_type),
             )
-            .highlight_style(
-                Style::default()
-                    .bg(Color::DarkGray)
-                    .add_modifier(Modifier::BOLD),
-            );
+            .highlight_style(highlight_style);
 
         f.render_stateful_widget(the_list, r, &mut self.list_tree.state);
     }
