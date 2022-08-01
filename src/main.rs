@@ -9,6 +9,8 @@ use std::{
 };
 use tui::{backend::Backend, backend::CrosstermBackend, Terminal};
 
+use tui_textarea::{Input, TextArea};
+
 mod app;
 mod components;
 mod foldertree;

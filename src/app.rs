@@ -9,19 +9,19 @@ use tui::{
     Frame,
 };
 
-use crate::components::{CommandComponent, FolderPopup};
+use crate::components::CommandComponent;
 use crate::tabs::{HistoryTab, MainTab};
 
-pub struct App {
-    main_tab: MainTab,
+pub struct App<'a> {
+    main_tab: MainTab<'a>,
     history_tab: HistoryTab,
     cmdbar: CommandComponent,
-    folder_popup: FolderPopup,
+    // folder_popup: FolderPopup,
     do_quit: bool,
     current_tab: usize,
 }
 
-impl App {
+impl App<'_> {
     pub fn new() -> Self {
         let main_tab = MainTab::new();
         let cmdbar = CommandComponent::new(main_tab.current_cmds.clone());
@@ -30,7 +30,7 @@ impl App {
             main_tab,
             history_tab: HistoryTab::new(),
             cmdbar,
-            folder_popup: FolderPopup::new(),
+            // folder_popup: FolderPopup::new(),
             do_quit: false,
             current_tab: 0,
         }
@@ -66,12 +66,12 @@ impl App {
                 self.current_tab = 1;
                 self.cmdbar.update_cmd(1);
             }
-            KeyEvent {
-                code: KeyCode::Char('a'),
-                modifiers: KeyModifiers::NONE,
-            } => {
-                self.folder_popup.is_open = !self.folder_popup.is_open;
-            }
+            // KeyEvent {
+            //     code: KeyCode::Char('a'),
+            //     modifiers: KeyModifiers::NONE,
+            // } => {
+            //     self.folder_popup.is_open = !self.folder_popup.is_open;
+            // }
             _ => {}
         };
 
@@ -106,8 +106,8 @@ impl App {
         };
 
         // Draw popup if its open
-        let centered = self.folder_popup.centered_rect(80, 80, f.size());
-        self.folder_popup.draw(f, centered);
+        // let centered = self.folder_popup.centered_rect(80, 80, f.size());
+        // self.folder_popup.draw(f, centered);
 
         Ok(())
     }
