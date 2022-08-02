@@ -85,7 +85,7 @@ impl MainTab<'_> {
         self.list_component.draw(f, chunks[0]);
         self.main_pane.draw(f, chunks[1]);
 
-        let centered = self.folder_popup.centered_rect(80, 80, f.size());
+        let centered = self.folder_popup.centered_rect(60, 60, f.size());
         self.folder_popup.draw(f, centered);
     }
 
