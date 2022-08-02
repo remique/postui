@@ -67,11 +67,16 @@ impl MainTab<'_> {
             }
             Focus::FolderPopup => {
                 if ev.code == KeyCode::Esc {
-                    self.folder_popup.is_open = !self.folder_popup.is_open;
+                    self.folder_popup.close();
                     self.switch_focus(Focus::FolderTreeWindow);
                 }
 
                 self.folder_popup.event(ev);
+
+                if self.folder_popup.is_saved() == true {
+                    self.folder_popup.close();
+                    self.switch_focus(Focus::FolderTreeWindow);
+                }
             }
         };
     }
