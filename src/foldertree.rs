@@ -103,7 +103,7 @@ impl FolderTree {
 
                     let temp_obj: Item = Item {
                         rep: format!(
-                            "{}{} {}",
+                            "{}{} 📁 {}",
                             construct_indent(indent),
                             symbol,
                             val.get("name").and_then(serde_json::Value::as_str).unwrap()
