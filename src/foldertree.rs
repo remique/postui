@@ -342,7 +342,7 @@ mod tests {
     use super::*;
     use std::io::prelude::*;
 
-    fn before() -> FolderTree {
+    fn initialize() -> FolderTree {
         let input = r#"
             {
                 "root": [
@@ -356,13 +356,15 @@ mod tests {
                                 "type": "endpoint",
                                 "name": "Dodaj usera",
                                 "method": "POST",
-                                "path": "/root/0/items/0"
+                                "path": "/root/0/items/0",
+                                "url": "http://localhost:3000/1"
                             },
                             {
                                 "type": "endpoint",
                                 "name": "Zmien userow",
                                 "method": "PUT",
-                                "path": "/root/0/items/1"
+                                "path": "/root/0/items/1",
+                                "url": "http://localhost:3000/2"
                             },
                             {
                                 "type": "folder",
@@ -374,7 +376,8 @@ mod tests {
                                         "type": "endpoint",
                                         "name": "Nested jeszcze",
                                         "method": "GET",
-                                        "path": "/root/0/items/2/items/0"
+                                        "path": "/root/0/items/2/items/0",
+                                        "url": "http://localhost:3000/2"
                                     }
                                 ]
                             }
@@ -384,7 +387,8 @@ mod tests {
                         "type": "endpoint",
                         "name": "Costam",
                         "method": "POST",
-                        "path": "/root/1"
+                        "path": "/root/1",
+                        "url": "http://localhost:3000/4"
                     },
                     {
                         "type": "folder",
@@ -397,82 +401,75 @@ mod tests {
             }
         "#;
 
-        let mut dir = fs::create_dir("./tmp");
-        let mut file = fs::File::create("./tmp/asdf.txt");
-        let mut write = file.write_all(input.as_bytes());
+        use tempfile::NamedTempFile;
+        let mut file = NamedTempFile::new().unwrap();
 
-        FolderTree::new("./tmp/asdf.txt").unwrap()
-    }
+        file.write_all(input.as_bytes()).unwrap();
 
-    fn after() {
-        let rem = fs::remove_dir_all("./tmp").unwrap();
+        FolderTree::new(file.path()).unwrap()
     }
 
     #[test]
     fn test_path_new_folder_to_endpoint() {
-        let ft = before();
+        let ft = initialize();
 
         assert_eq!(
             String::from("/root/0/items/3"),
             ft.build_path_insert("/root/0/items/1")
         );
-
-        after();
     }
 
     #[test]
     fn test_path_new_folder_to_empty_folder() {
-        let ft = before();
+        let ft = initialize();
 
         assert_eq!(
             String::from("/root/2/items/0"),
             ft.build_path_insert("/root/2")
         );
-
-        after();
     }
 
-    //     #[test]
-    //     fn test_path_new_folder_to_non_empty_folder() {
-    //         let ft = setup_ft();
+    #[test]
+    fn test_path_new_folder_to_non_empty_folder() {
+        let ft = initialize();
 
-    //         assert_eq!(
-    //             String::from("/root/0/items/2/items/1"),
-    //             ft.build_path_insert("/root/0/items/2")
-    //         );
-    //     }
+        assert_eq!(
+            String::from("/root/0/items/2/items/1"),
+            ft.build_path_insert("/root/0/items/2")
+        );
+    }
 
-    //     #[test]
-    //     fn test_basic_folder_insertion() {
-    //         let mut ft = setup_ft();
+    #[test]
+    fn test_basic_folder_insertion() {
+        let mut ft = initialize();
 
-    //         ft.insert_folder("/root/0/items/1", "new folder");
+        ft.insert_folder("/root/0/items/1", "new folder");
 
-    //         assert_eq!(
-    //             ft.raw_data
-    //                 .pointer("/root/0/items/3")
-    //                 .unwrap()
-    //                 .get("name")
-    //                 .and_then(serde_json::Value::as_str)
-    //                 .unwrap(),
-    //             "new folder"
-    //         );
-    //     }
+        assert_eq!(
+            ft.raw_data
+                .pointer("/root/0/items/3")
+                .unwrap()
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .unwrap(),
+            "new folder"
+        );
+    }
 
-    //     #[test]
-    //     fn test_basic_endpoint_insertion() {
-    //         let mut ft = setup_ft();
+    #[test]
+    fn test_basic_endpoint_insertion() {
+        let mut ft = initialize();
 
-    //         ft.insert_endpoint("/root/0/items/2", "new endpoint");
+        ft.insert_endpoint("/root/0/items/2", "new endpoint");
 
-    //         assert_eq!(
-    //             ft.raw_data
-    //                 .pointer("/root/0/items/2/items/1")
-    //                 .unwrap()
-    //                 .get("name")
-    //                 .and_then(serde_json::Value::as_str)
-    //                 .unwrap(),
-    //             "new endpoint"
-    //         );
-    //     }
+        assert_eq!(
+            ft.raw_data
+                .pointer("/root/0/items/2/items/1")
+                .unwrap()
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .unwrap(),
+            "new endpoint"
+        );
+    }
 }
