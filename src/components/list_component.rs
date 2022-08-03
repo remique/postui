@@ -1,5 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use std::{cell::RefCell, fs, path::Path, rc::Rc};
+use std::{cell::RefCell, path::Path, rc::Rc};
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -25,10 +25,8 @@ pub struct StatefulList {
 }
 
 impl StatefulList {
-    fn from_path<P: AsRef<std::path::Path>>(path: P) -> StatefulList {
-        let path_to_string = fs::read_to_string(path).unwrap();
-
-        let ft = FolderTree::from_str(path_to_string.as_str());
+    fn from_path<P: AsRef<Path>>(path: P) -> StatefulList {
+        let ft = FolderTree::new(path).unwrap();
         ft.parse_all();
 
         let mut new_state = ListState::default();
@@ -117,6 +115,17 @@ impl StatefulList {
             let current_item = &self.items.get(i).unwrap().obj_ref;
 
             self.tree.borrow_mut().unfold_folder(current_item.as_str());
+        }
+    }
+
+    pub fn insert_endpoint(&mut self) {
+        if let Some(i) = self.state.selected() {
+            // get closest folder
+            let current_item = &self.items.get(i).unwrap().obj_ref;
+
+            self.tree
+                .borrow_mut()
+                .insert_endpoint(current_item.as_str(), "Hehe");
         }
     }
 }
