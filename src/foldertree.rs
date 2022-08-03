@@ -9,7 +9,7 @@ pub struct Endpoint {
     pub url: String,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct Item {
     // Representation of an item which is a symbol+name
     pub rep: String,
@@ -27,6 +27,9 @@ pub struct FolderTree {
 
     // Original object containing all the values
     pub raw_data: serde_json::Value,
+
+    // path reference to update the file
+    path: String,
 }
 
 // This is used only to serialize new folder which will be inserted
@@ -50,11 +53,17 @@ struct NewEndpoint {
 
 impl FolderTree {
     pub fn new<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn Error>> {
-        let input = fs::read_to_string(path)?;
+        let input = fs::read_to_string(path.as_ref())?;
         let raw_data = serde_json::from_str(input.as_str())?;
         let items = RefCell::new(Vec::new());
 
-        Ok(FolderTree { items, raw_data })
+        let path = String::from(path.as_ref().to_str().unwrap());
+
+        Ok(FolderTree {
+            items,
+            raw_data,
+            path,
+        })
     }
 
     pub fn parse_all(&self) {
@@ -316,6 +325,19 @@ impl FolderTree {
 
         dts.push(k);
         self.parse_all();
+        self.update_file();
+    }
+
+    fn update_file(&self) {
+        let s = self.path.as_str();
+        let p = Path::new(s);
+        let mut f = fs::File::create(p).unwrap();
+
+        let xd: String = serde_json::to_string_pretty(&self.raw_data).unwrap();
+
+        use std::io::prelude::*;
+
+        f.write_all(xd.as_bytes()).unwrap();
     }
 
     pub fn parse_folder(&self, val: &serde_json::Value, _folded: bool, indent: i32) {
