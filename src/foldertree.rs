@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{cell::RefCell, error::Error, fs, path::Path};
 
 #[derive(Deserialize)]
@@ -26,7 +27,7 @@ pub struct FolderTree {
     pub items: RefCell<Vec<Item>>,
 
     // Original object containing all the values
-    pub raw_data: serde_json::Value,
+    pub raw_data: Value,
 
     // path reference to update the file
     path: String,
@@ -70,30 +71,23 @@ impl FolderTree {
         // Each time we re-parse everything we have to clear the items vector
         self.items.borrow_mut().clear();
 
-        let json_data = self
-            .raw_data
-            .get("root")
-            .and_then(serde_json::Value::as_array)
-            .unwrap();
+        let json_data = self.raw_data.get("root").and_then(Value::as_array).unwrap();
 
         self.parse(json_data, 0);
     }
 
-    fn parse(&self, json_data: &[serde_json::Value], indent: i32) {
+    fn parse(&self, json_data: &[Value], indent: i32) {
         let mut temp_vec: Vec<Item> = Vec::new();
 
         for data in json_data.iter() {
-            let val = serde_json::Value::deserialize(data).unwrap();
+            let val = Value::deserialize(data).unwrap();
 
-            match val.get("type").and_then(serde_json::Value::as_str).unwrap() {
+            match val.get("type").and_then(Value::as_str).unwrap() {
                 "endpoint" => {
                     self.parse_endpoint(&val, indent);
                 }
                 "folder" => {
-                    let is_folded = val
-                        .get("folded")
-                        .and_then(serde_json::Value::as_bool)
-                        .unwrap();
+                    let is_folded = val.get("folded").and_then(Value::as_bool).unwrap();
 
                     let symbol = if is_folded {
                         String::from("▸")
@@ -106,18 +100,10 @@ impl FolderTree {
                             "{}{} 📁 {}",
                             construct_indent(indent),
                             symbol,
-                            val.get("name").and_then(serde_json::Value::as_str).unwrap()
+                            val.get("name").and_then(Value::as_str).unwrap()
                         ),
-                        r#type: val
-                            .get("type")
-                            .and_then(serde_json::Value::as_str)
-                            .unwrap()
-                            .to_string(),
-                        obj_ref: val
-                            .get("path")
-                            .and_then(serde_json::Value::as_str)
-                            .unwrap()
-                            .to_string(),
+                        r#type: val.get("type").and_then(Value::as_str).unwrap().to_string(),
+                        obj_ref: val.get("path").and_then(Value::as_str).unwrap().to_string(),
                     };
 
                     temp_vec.push(temp_obj);
@@ -133,7 +119,7 @@ impl FolderTree {
         }
     }
 
-    pub fn parse_endpoint(&self, val: &serde_json::Value, indent: i32) {
+    pub fn parse_endpoint(&self, val: &Value, indent: i32) {
         let cur_endpoint: Endpoint = serde_json::from_value(val.clone()).unwrap();
 
         let ind = construct_indent(indent);
@@ -141,59 +127,43 @@ impl FolderTree {
         let temp_obj: Item = Item {
             rep: format!("{}  {} {}", ind, cur_endpoint.method, cur_endpoint.name),
             r#type: String::from("endpoint"),
-            obj_ref: val
-                .get("path")
-                .and_then(serde_json::Value::as_str)
-                .unwrap()
-                .to_string(),
+            obj_ref: val.get("path").and_then(Value::as_str).unwrap().to_string(),
         };
 
         self.items.borrow_mut().push(temp_obj);
     }
 
-    fn build_path_insert(&self, path: &str) -> String {
-        // We split the path into a vector of '/'
-        let tmp: Vec<&str> = path.split('/').collect();
-        let tmp_data = self.raw_data.pointer(path).unwrap();
+    // Find the closest folder that we can insert out new thing into
+    fn find_closest_folder(&self, path: &str) -> String {
+        let mut is_folder = false;
+        let mut split = path.split('/').collect::<Vec<&str>>();
+        let mut ptr = self.raw_data.pointer(path).unwrap();
 
-        // This looks weird but works for now
-        let mut new;
-
-        if tmp_data.get("items").is_some() {
-            new = tmp.join("/");
-
-            if tmp_data
-                .get("items")
-                .and_then(serde_json::Value::as_array)
-                .unwrap()
-                .is_empty()
-            {
-                // We append /items/0 as it is the first item in the array
-                new.push_str(format!("/items/{}", 0).as_str());
+        while is_folder == false {
+            if ptr.get("items").is_some() {
+                is_folder = true;
             } else {
-                let index = self
-                    .raw_data
-                    .pointer(format!("{}/items", new.as_str()).as_str())
-                    .unwrap()
-                    .as_array()
-                    .unwrap()
-                    .len();
-
-                new.push_str(format!("/items/{}", index.to_string().as_str()).as_str());
+                split.remove(split.len() - 1);
+                ptr = self.raw_data.pointer(split.join("/").as_str()).unwrap();
             }
-        } else {
-            new = tmp[0..tmp.len() - 1].join("/");
-            let index = self
-                .raw_data
-                .pointer(new.as_str())
-                .unwrap()
-                .as_array()
-                .unwrap()
-                .len();
-            new.push_str(format!("/{}", index.to_string().as_str()).as_str());
         }
 
-        new
+        split.join("/")
+    }
+
+    fn build_new_path(&self, path: &str) -> String {
+        let mut split: Vec<&str> = path.split('/').collect();
+
+        let new_split = split[split.len() - 1];
+
+        let parsed = new_split.parse::<i32>().unwrap();
+
+        let parsed_plusone = (parsed + 1).to_string();
+
+        split.remove(split.len() - 1);
+        split.push(parsed_plusone.as_str());
+
+        split.join("/")
     }
 
     fn get_truncated_path(&self, path: &str) -> String {
@@ -205,7 +175,7 @@ impl FolderTree {
     pub fn get_current_from_path(&self, path: &str) -> Option<String> {
         let check = self.raw_data.pointer(path).unwrap().as_object().unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("endpoint")) {
+        if check["type"] == Value::String(String::from("endpoint")) {
             return Some(format!("{} | {}", check["method"], check["url"]));
         }
 
@@ -215,8 +185,8 @@ impl FolderTree {
     pub fn can_fold_folder(&self, path: &str) -> bool {
         let check = self.raw_data.pointer(path).unwrap().as_object().unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder"))
-            && check["folded"] == serde_json::Value::Bool(false)
+        if check["type"] == Value::String(String::from("folder"))
+            && check["folded"] == Value::Bool(false)
         {
             return true;
         }
@@ -227,8 +197,8 @@ impl FolderTree {
     pub fn can_unfold_folder(&self, path: &str) -> bool {
         let check = self.raw_data.pointer(path).unwrap().as_object().unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder"))
-            && check["folded"] == serde_json::Value::Bool(true)
+        if check["type"] == Value::String(String::from("folder"))
+            && check["folded"] == Value::Bool(true)
         {
             return true;
         }
@@ -245,10 +215,10 @@ impl FolderTree {
             .as_object_mut()
             .unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder"))
-            && check["folded"] == serde_json::Value::Bool(false)
+        if check["type"] == Value::String(String::from("folder"))
+            && check["folded"] == Value::Bool(false)
         {
-            check["folded"] = serde_json::Value::Bool(true);
+            check["folded"] = Value::Bool(true);
 
             self.parse_all();
         }
@@ -263,67 +233,39 @@ impl FolderTree {
             .as_object_mut()
             .unwrap();
 
-        if check["type"] == serde_json::Value::String(String::from("folder"))
-            && check["folded"] == serde_json::Value::Bool(true)
+        if check["type"] == Value::String(String::from("folder"))
+            && check["folded"] == Value::Bool(true)
         {
-            check["folded"] = serde_json::Value::Bool(false);
+            check["folded"] = Value::Bool(false);
 
             self.parse_all();
         }
     }
 
-    pub fn insert_folder(&mut self, path: &str, name: &str) {
-        let new_path_tmp = self.build_path_insert(path);
-
-        let newfolder = NewFolder {
-            r#type: String::from("folder"),
-            name: String::from(name),
-            folded: false,
-            path: new_path_tmp,
-            items: vec![],
-        };
-
-        let previous_folder_path = self.get_truncated_path(path);
-
-        let dts = self
-            .raw_data
-            .pointer_mut(previous_folder_path.as_str())
-            .unwrap()
-            .as_array_mut()
-            .unwrap();
-
-        let j = serde_json::to_string(&newfolder).unwrap();
-        let k: serde_json::Value = serde_json::from_str(j.as_str()).unwrap();
-
-        dts.push(k);
-        self.parse_all();
-    }
-
     pub fn insert_endpoint(&mut self, path: &str, name: &str) {
-        // if we enter a path that is an endpoint, we have to find
-        // the closest folder
-        let new_path_tmp = self.build_path_insert(path);
+        let new_path = self.build_new_path(path);
+        let closest_folder = self.find_closest_folder(path);
 
-        let newendpoint = NewEndpoint {
+        let endpoint = NewEndpoint {
             r#type: String::from("endpoint"),
             name: String::from(name),
             method: String::from("POST"),
-            path: new_path_tmp,
+            path: new_path,
             url: String::from("TODO"),
         };
 
-        let dts = self
+        let data_pointer = self
             .raw_data
-            .pointer_mut(path)
+            .pointer_mut(&closest_folder)
             .unwrap()
             .get_mut("items")
-            .and_then(serde_json::Value::as_array_mut)
+            .and_then(Value::as_array_mut)
             .unwrap();
 
-        let j = serde_json::to_string(&newendpoint).unwrap();
-        let k: serde_json::Value = serde_json::from_str(j.as_str()).unwrap();
+        let j = serde_json::to_string(&endpoint).unwrap();
+        let k: Value = serde_json::from_str(j.as_str()).unwrap();
 
-        dts.push(k);
+        data_pointer.push(k);
         self.parse_all();
         self.update_file();
     }
@@ -340,11 +282,8 @@ impl FolderTree {
         f.write_all(xd.as_bytes()).unwrap();
     }
 
-    pub fn parse_folder(&self, val: &serde_json::Value, _folded: bool, indent: i32) {
-        let arr = val
-            .get("items")
-            .and_then(serde_json::Value::as_array)
-            .unwrap();
+    pub fn parse_folder(&self, val: &Value, _folded: bool, indent: i32) {
+        let arr = val.get("items").and_then(Value::as_array).unwrap();
 
         self.parse(arr, indent);
     }
@@ -363,6 +302,7 @@ fn construct_indent(indent: i32) -> String {
 mod tests {
     use super::*;
     use std::io::prelude::*;
+    use tempfile::NamedTempFile;
 
     fn initialize() -> FolderTree {
         let input = r#"
@@ -423,7 +363,6 @@ mod tests {
             }
         "#;
 
-        use tempfile::NamedTempFile;
         let mut file = NamedTempFile::new().unwrap();
 
         file.write_all(input.as_bytes()).unwrap();
@@ -432,66 +371,39 @@ mod tests {
     }
 
     #[test]
-    fn test_path_new_folder_to_endpoint() {
+    fn test_build_new_path_on_folder() {
+        let ft = initialize();
+
+        assert_eq!(ft.build_new_path("/root/0"), String::from("/root/1"));
+    }
+
+    #[test]
+    fn test_build_new_path_on_endpoint() {
         let ft = initialize();
 
         assert_eq!(
-            String::from("/root/0/items/3"),
-            ft.build_path_insert("/root/0/items/1")
+            ft.build_new_path("/root/0/items/1"),
+            String::from("/root/0/items/2")
         );
     }
 
     #[test]
-    fn test_path_new_folder_to_empty_folder() {
+    fn test_find_closest_folder_on_folder() {
         let ft = initialize();
 
         assert_eq!(
-            String::from("/root/2/items/0"),
-            ft.build_path_insert("/root/2")
+            ft.find_closest_folder("/root/0/items/2"),
+            String::from("/root/0/items/2")
         );
     }
 
     #[test]
-    fn test_path_new_folder_to_non_empty_folder() {
+    fn test_find_closest_folder_on_endpoint() {
         let ft = initialize();
 
         assert_eq!(
-            String::from("/root/0/items/2/items/1"),
-            ft.build_path_insert("/root/0/items/2")
-        );
-    }
-
-    #[test]
-    fn test_basic_folder_insertion() {
-        let mut ft = initialize();
-
-        ft.insert_folder("/root/0/items/1", "new folder");
-
-        assert_eq!(
-            ft.raw_data
-                .pointer("/root/0/items/3")
-                .unwrap()
-                .get("name")
-                .and_then(serde_json::Value::as_str)
-                .unwrap(),
-            "new folder"
-        );
-    }
-
-    #[test]
-    fn test_basic_endpoint_insertion() {
-        let mut ft = initialize();
-
-        ft.insert_endpoint("/root/0/items/2", "new endpoint");
-
-        assert_eq!(
-            ft.raw_data
-                .pointer("/root/0/items/2/items/1")
-                .unwrap()
-                .get("name")
-                .and_then(serde_json::Value::as_str)
-                .unwrap(),
-            "new endpoint"
+            ft.find_closest_folder("/root/0/items/2/items/0"),
+            String::from("/root/0/items/2")
         );
     }
 }
