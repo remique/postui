@@ -1,5 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
-use std::{cell::RefCell, path::Path, rc::Rc};
+use std::path::Path;
 use tui::{
     backend::Backend,
     layout::Rect,
@@ -10,41 +10,36 @@ use tui::{
 };
 
 use crate::components::CommandType;
-use crate::foldertree::{FolderTree, Item};
+use crate::foldertree::FolderTree;
 
 pub struct ListComponent {
-    file_path: String,
     pub list_tree: StatefulList,
     pub focused: bool,
 }
 
 pub struct StatefulList {
     state: ListState,
-    tree: Rc<RefCell<FolderTree>>,
-    items: Vec<Item>,
+    tree: FolderTree,
 }
 
 impl StatefulList {
     fn from_path<P: AsRef<Path>>(path: P) -> StatefulList {
-        let ft = FolderTree::new(path).unwrap();
-        ft.parse_all();
-
         let mut new_state = ListState::default();
-        new_state.select(Some(0));
+        let tree = FolderTree::new(path).unwrap();
 
-        let items = ft.items.borrow().clone();
+        new_state.select(Some(0));
+        tree.parse_all();
 
         StatefulList {
             state: new_state,
-            tree: Rc::new(RefCell::new(ft)),
-            items,
+            tree,
         }
     }
 
     fn next(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= self.tree.borrow().items.borrow().len() - 1 {
+                if i >= self.tree.items.borrow().len() - 1 {
                     0
                 } else {
                     i + 1
@@ -59,7 +54,7 @@ impl StatefulList {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.tree.borrow().items.borrow().len() - 1
+                    self.tree.items.borrow().len() - 1
                 } else {
                     i - 1
                 }
@@ -71,12 +66,10 @@ impl StatefulList {
 
     pub fn get_current_endpoint(&self) -> Option<String> {
         if let Some(i) = self.state.selected() {
-            let current_item = &self.items.get(i).unwrap().obj_ref;
+            let items = self.tree.items.borrow().clone();
+            let current = items.get(i).unwrap().obj_ref.as_str();
 
-            return self
-                .tree
-                .borrow()
-                .get_current_from_path(current_item.as_str());
+            return self.tree.get_current_from_path(current);
         }
 
         None
@@ -84,9 +77,10 @@ impl StatefulList {
 
     fn can_fold_folder(&self) -> bool {
         if let Some(i) = self.state.selected() {
-            let current_item = &self.items.get(i).unwrap().obj_ref;
+            let items = self.tree.items.borrow().clone();
+            let current = items.get(i).unwrap().obj_ref.as_str();
 
-            return self.tree.borrow().can_fold_folder(current_item.as_str());
+            return self.tree.can_fold_folder(current);
         }
 
         false
@@ -94,9 +88,10 @@ impl StatefulList {
 
     pub fn can_unfold_folder(&self) -> bool {
         if let Some(i) = self.state.selected() {
-            let current_item = &self.items.get(i).unwrap().obj_ref;
+            let items = self.tree.items.borrow().clone();
+            let current = items.get(i).unwrap().obj_ref.as_str();
 
-            return self.tree.borrow().can_unfold_folder(current_item.as_str());
+            return self.tree.can_unfold_folder(current);
         }
 
         false
@@ -104,28 +99,28 @@ impl StatefulList {
 
     fn fold_folder(&mut self) {
         if let Some(i) = self.state.selected() {
-            let current_item = &self.items.get(i).unwrap().obj_ref;
+            let items = self.tree.items.borrow().clone();
+            let current = items.get(i).unwrap().obj_ref.as_str();
 
-            self.tree.borrow_mut().fold_folder(current_item.as_str());
+            self.tree.fold_folder(current);
         }
     }
 
     fn unfold_folder(&mut self) {
         if let Some(i) = self.state.selected() {
-            let current_item = &self.items.get(i).unwrap().obj_ref;
+            let items = self.tree.items.borrow().clone();
+            let current = items.get(i).unwrap().obj_ref.as_str();
 
-            self.tree.borrow_mut().unfold_folder(current_item.as_str());
+            self.tree.unfold_folder(current);
         }
     }
 
     pub fn insert_endpoint(&mut self) {
         if let Some(i) = self.state.selected() {
-            // get closest folder
-            let current_item = &self.items.get(i).unwrap().obj_ref;
+            let items = self.tree.items.borrow().clone();
+            let current = items.get(i).unwrap().obj_ref.as_str();
 
-            self.tree
-                .borrow_mut()
-                .insert_endpoint(current_item.as_str(), "Hehe");
+            self.tree.insert_endpoint(current, "Hehe");
         }
     }
 }
@@ -133,7 +128,6 @@ impl StatefulList {
 impl ListComponent {
     pub fn new<P: AsRef<Path>>(path: P) -> Self {
         Self {
-            file_path: "temp_file_path".to_string(),
             list_tree: StatefulList::from_path(path),
             focused: false,
         }
@@ -160,7 +154,7 @@ impl ListComponent {
     pub fn draw<B: Backend>(&mut self, f: &mut Frame<B>, r: Rect) {
         let mut items: Vec<ListItem> = Vec::new();
 
-        for item in self.list_tree.tree.borrow().items.borrow().iter() {
+        for item in self.list_tree.tree.items.borrow().iter() {
             let style = match item.r#type.as_str() {
                 "folder" => Style::default().add_modifier(Modifier::BOLD),
                 "endpoint" => Style::default(),
