@@ -13,8 +13,8 @@ use crate::components::CommandType;
 use crate::foldertree::FolderTree;
 
 pub struct ListComponent {
-    pub list_tree: StatefulList,
-    pub focused: bool,
+    list_tree: StatefulList,
+    focused: bool,
 }
 
 pub struct StatefulList {
@@ -210,5 +210,17 @@ impl ListComponent {
             CommandType::Break,
             CommandType::Command(String::from("lmao [y]")),
         ]
+    }
+
+    pub fn tree(&mut self) -> &mut StatefulList {
+        &mut self.list_tree
+    }
+
+    pub fn focused(&self) -> bool {
+        self.focused
+    }
+
+    pub fn set_focus(&mut self, val: bool) {
+        self.focused = val;
     }
 }

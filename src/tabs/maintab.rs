@@ -40,7 +40,7 @@ impl MainTab<'_> {
         // TODO: This shit needs refactor
         match self.focus {
             Focus::FolderTreeWindow => {
-                let can_unfold = self.list_component.list_tree.can_unfold_folder();
+                let can_unfold = self.list_component.tree().can_unfold_folder();
 
                 if ev.code == KeyCode::Right && !can_unfold {
                     self.switch_focus(Focus::MainPane);
@@ -48,7 +48,7 @@ impl MainTab<'_> {
                 } else {
                     self.list_component.event(ev);
 
-                    if let Some(i) = self.list_component.list_tree.get_current_endpoint() {
+                    if let Some(i) = self.list_component.tree().get_current_endpoint() {
                         self.main_pane.current_endpoint = i;
                     }
                 }
@@ -77,7 +77,7 @@ impl MainTab<'_> {
                     self.folder_popup.close();
                     self.switch_focus(Focus::FolderTreeWindow);
 
-                    self.list_component.list_tree.insert_endpoint();
+                    self.list_component.tree().insert_endpoint();
                 }
             }
         };
@@ -99,15 +99,15 @@ impl MainTab<'_> {
     fn switch_focus(&mut self, f: Focus) {
         match f {
             Focus::FolderTreeWindow => {
-                self.list_component.focused = true;
+                self.list_component.set_focus(true);
                 self.main_pane.focused = false;
             }
             Focus::MainPane => {
-                self.list_component.focused = false;
+                self.list_component.set_focus(false);
                 self.main_pane.focused = true;
             }
             Focus::FolderPopup => {
-                self.list_component.focused = false;
+                self.list_component.set_focus(false);
                 self.main_pane.focused = false;
             }
         }
