@@ -153,14 +153,14 @@ impl FolderTree {
     }
 
     pub fn current_endpoint(&self, path: &str) -> Option<Map<String, Value>> {
-        let check = self.raw_data.pointer(path).unwrap().as_object().unwrap();
-
-        if check["type"] == Value::String(String::from("endpoint")) {
-            return Some(check.to_owned());
-            // return Some(format!("{} | {}", check["method"], check["url"]));
+        if let Some(current) = self.raw_data.pointer(path) {
+            if current.get("type") == Some(&Value::String(format!("endpoint"))) {
+                return Some(current.as_object().unwrap().to_owned());
+            }
+            None
+        } else {
+            None
         }
-
-        None
     }
 
     pub fn can_fold_folder(&self, path: &str) -> bool {
