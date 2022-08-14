@@ -9,7 +9,7 @@ use crate::components::{CommandType, FolderPopup, ListComponent, MainPaneCompone
 
 pub struct MainTab<'a> {
     list_component: ListComponent,
-    main_pane: MainPaneComponent,
+    main_pane: MainPaneComponent<'a>,
     folder_popup: FolderPopup<'a>,
     focus: Focus,
     pub current_cmds: Vec<CommandType>,
@@ -48,8 +48,8 @@ impl MainTab<'_> {
                 } else {
                     self.list_component.event(ev);
 
-                    if let Some(i) = self.list_component.tree().get_current_endpoint() {
-                        self.main_pane.current_endpoint = i;
+                    if let Some(curr) = self.list_component.tree().get_current_endpoint() {
+                        self.main_pane.current_endpoint = curr;
                     }
                 }
                 if ev.code == KeyCode::Char('a') {
