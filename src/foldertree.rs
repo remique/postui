@@ -1,14 +1,6 @@
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::{cell::RefCell, error::Error, fs, path::Path};
-
-#[derive(Deserialize)]
-pub struct Endpoint {
-    pub method: String,
-    pub name: String,
-    pub r#type: String,
-    pub url: String,
-}
 
 #[derive(Clone, Serialize)]
 pub struct Item {
@@ -34,7 +26,7 @@ pub struct FolderTree {
 }
 
 // This is used only to serialize new folder which will be inserted
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 struct NewFolder {
     r#type: String,
     name: String,
@@ -43,13 +35,14 @@ struct NewFolder {
     items: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize, Serialize)]
 struct NewEndpoint {
     r#type: String,
     name: String,
     method: String,
     path: String,
     url: String,
+    json_body: String,
 }
 
 impl FolderTree {
@@ -88,25 +81,18 @@ impl FolderTree {
                 }
                 "folder" => {
                     let is_folded = val.get("folded").and_then(Value::as_bool).unwrap();
+                    let indented = construct_indent(indent);
+                    let name = val.get("name").and_then(Value::as_str).unwrap();
 
-                    let symbol = if is_folded {
-                        String::from("▸")
-                    } else {
-                        String::from("▾")
-                    };
+                    let symbol = if is_folded { "▸" } else { "▾" };
 
-                    let temp_obj: Item = Item {
-                        rep: format!(
-                            "{}{} 📁 {}",
-                            construct_indent(indent),
-                            symbol,
-                            val.get("name").and_then(Value::as_str).unwrap()
-                        ),
+                    let new_item = Item {
+                        rep: format!("{}{} 📁 {}", indented, symbol, name),
                         r#type: val.get("type").and_then(Value::as_str).unwrap().to_string(),
                         obj_ref: val.get("path").and_then(Value::as_str).unwrap().to_string(),
                     };
 
-                    temp_vec.push(temp_obj);
+                    temp_vec.push(new_item);
 
                     self.items.borrow_mut().append(&mut temp_vec);
 
@@ -120,7 +106,7 @@ impl FolderTree {
     }
 
     pub fn parse_endpoint(&self, val: &Value, indent: i32) {
-        let cur_endpoint: Endpoint = serde_json::from_value(val.clone()).unwrap();
+        let cur_endpoint: NewEndpoint = serde_json::from_value(val.clone()).unwrap();
 
         let ind = construct_indent(indent);
 
@@ -166,17 +152,12 @@ impl FolderTree {
         split.join("/")
     }
 
-    fn get_truncated_path(&self, path: &str) -> String {
-        let tmp_split: Vec<&str> = path.split('/').collect();
-
-        tmp_split[0..tmp_split.len() - 1].join("/")
-    }
-
-    pub fn get_current_from_path(&self, path: &str) -> Option<String> {
+    pub fn current_endpoint(&self, path: &str) -> Option<Map<String, Value>> {
         let check = self.raw_data.pointer(path).unwrap().as_object().unwrap();
 
         if check["type"] == Value::String(String::from("endpoint")) {
-            return Some(format!("{} | {}", check["method"], check["url"]));
+            return Some(check.to_owned());
+            // return Some(format!("{} | {}", check["method"], check["url"]));
         }
 
         None
@@ -252,6 +233,7 @@ impl FolderTree {
             method: String::from("POST"),
             path: new_path,
             url: String::from("TODO"),
+            json_body: String::from("TODO"),
         };
 
         let data_pointer = self

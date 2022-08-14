@@ -1,4 +1,5 @@
 use crossterm::event::{KeyCode, KeyEvent};
+use serde_json::{Map, Value};
 use std::path::Path;
 use tui::{
     backend::Backend,
@@ -64,12 +65,12 @@ impl StatefulList {
         self.state.select(Some(i));
     }
 
-    pub fn get_current_endpoint(&self) -> Option<String> {
+    pub fn get_current_endpoint(&self) -> Option<Map<String, Value>> {
         if let Some(i) = self.state.selected() {
             let items = self.tree.items.borrow().clone();
             let current = items.get(i).unwrap().obj_ref.as_str();
 
-            return self.tree.get_current_from_path(current);
+            return self.tree.current_endpoint(current);
         }
 
         None
