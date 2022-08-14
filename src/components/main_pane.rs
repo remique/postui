@@ -1,7 +1,8 @@
 use serde_json::{Map, Value};
 use tui::{
     backend::Backend,
-    layout::{Constraint, Direction, Layout, Rect},
+    layout::{Constraint, Direction, Layout, Margin, Rect},
+    style::{Color, Style},
     text::{Span, Spans},
     widgets::{Block, BorderType, Borders, Paragraph},
     Frame,
@@ -31,10 +32,15 @@ impl MainPaneComponent<'_> {
             .constraints([Constraint::Percentage(10), Constraint::Percentage(90)])
             .split(r);
 
+        let lower_inner = chunks[1].inner(&Margin {
+            vertical: 1,
+            horizontal: 1,
+        });
+
         let inside = Layout::default()
             .direction(Direction::Vertical)
             .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(chunks[1]);
+            .split(lower_inner);
 
         let border_type = match self.focused {
             true => BorderType::Thick,
@@ -70,10 +76,10 @@ impl MainPaneComponent<'_> {
             .borders(Borders::ALL)
             .border_type(border_type);
 
-        self.body_textbox
-            .set_block(Block::default().borders(Borders::ALL));
-
         self.body_textbox = TextArea::from(body);
+
+        self.body_textbox
+            .set_cursor_style(Style::default().bg(Color::Black));
 
         let body_widget = self.body_textbox.widget();
 
