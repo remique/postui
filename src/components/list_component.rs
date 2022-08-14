@@ -207,9 +207,11 @@ impl ListComponent {
 
     pub fn generate_cmds(&self) -> Vec<CommandType> {
         vec![
-            CommandType::Command(String::from("hehe [x]")),
+            CommandType::Command(String::from("Add [a]")),
             CommandType::Break,
-            CommandType::Command(String::from("lmao [y]")),
+            CommandType::Command(String::from("Tabs [1-2]")),
+            CommandType::Break,
+            CommandType::Command(String::from("Switch pane [←→]")),
         ]
     }
 
