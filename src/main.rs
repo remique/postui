@@ -3,13 +3,13 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use log;
 use std::{
     io,
     time::{Duration, Instant},
 };
 use tui::{backend::Backend, backend::CrosstermBackend, Terminal};
-
-use tui_textarea::{Input, TextArea};
+use tui_logger;
 
 mod app;
 mod components;
@@ -18,7 +18,8 @@ mod tabs;
 
 use crate::app::*;
 
-fn main() -> Result<(), io::Error> {
+#[tokio::main]
+async fn main() -> Result<(), io::Error> {
     enable_raw_mode()?;
 
     // Set up terminal output
@@ -34,6 +35,12 @@ fn main() -> Result<(), io::Error> {
 
     // Clear the terminal before first draw.
     terminal.clear()?;
+
+    // Set up logger
+    tui_logger::init_logger(log::LevelFilter::Trace).unwrap();
+    tui_logger::set_default_level(log::LevelFilter::Trace);
+
+    log::info!("App initialized");
 
     loop {
         draw(&mut terminal, &mut app)?;
