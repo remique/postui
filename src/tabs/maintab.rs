@@ -61,8 +61,14 @@ impl MainTab<'_> {
                 if ev.code == KeyCode::Left {
                     self.switch_focus(Focus::FolderTreeWindow);
                     self.current_cmds = self.list_component.generate_cmds();
-                } else {
-                    // self.main_pane.event(ev);
+                }
+                if ev.code == KeyCode::Char('s') {
+                    tokio::spawn(async move {
+                        log::info!("Spawned task");
+                        tokio::time::sleep(tokio::time::Duration::new(5, 0)).await;
+
+                        log::info!("Finished task");
+                    });
                 }
             }
             Focus::FolderPopup => {
@@ -114,4 +120,10 @@ impl MainTab<'_> {
 
         self.focus = f;
     }
+}
+
+async fn foo_async() -> String {
+    let resp = reqwest::get("https://httpbin.org/ip").await.unwrap();
+
+    resp.status().to_string()
 }

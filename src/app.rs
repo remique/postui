@@ -10,11 +10,12 @@ use tui::{
 };
 
 use crate::components::CommandComponent;
-use crate::tabs::{HistoryTab, MainTab};
+use crate::tabs::{DebugTab, HistoryTab, MainTab};
 
 pub struct App<'a> {
     main_tab: MainTab<'a>,
     history_tab: HistoryTab,
+    debug_tab: DebugTab,
     cmdbar: CommandComponent,
     do_quit: bool,
     current_tab: usize,
@@ -23,11 +24,14 @@ pub struct App<'a> {
 impl App<'_> {
     pub fn new() -> Self {
         let main_tab = MainTab::new();
+        let history_tab = HistoryTab::new();
+        let debug_tab = DebugTab::new();
         let cmdbar = CommandComponent::new(main_tab.current_cmds.clone());
 
         Self {
             main_tab,
-            history_tab: HistoryTab::new(),
+            history_tab,
+            debug_tab,
             cmdbar,
             do_quit: false,
             current_tab: 0,
@@ -64,6 +68,14 @@ impl App<'_> {
                 self.current_tab = 1;
                 self.cmdbar.update_cmd(1);
             }
+            // Change to Tab 4
+            KeyEvent {
+                code: KeyCode::Char('4'),
+                modifiers: KeyModifiers::NONE,
+            } => {
+                self.current_tab = 3;
+                self.cmdbar.update_cmd(1);
+            }
             _ => {}
         };
 
@@ -94,6 +106,9 @@ impl App<'_> {
                 self.history_tab.draw(f, chunks[1]);
                 self.cmdbar.draw(f, chunks[2]);
             }
+            3 => {
+                self.debug_tab.draw(f, chunks[1]);
+            }
             _ => {}
         };
 
@@ -109,6 +124,7 @@ impl App<'_> {
             String::from("Main"),
             String::from("History"),
             String::from("About"),
+            String::from("Debug"),
         ];
 
         let titles = titles

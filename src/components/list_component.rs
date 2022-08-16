@@ -23,6 +23,7 @@ pub struct StatefulList {
     tree: FolderTree,
 }
 
+// Move to another file
 impl StatefulList {
     fn from_path<P: AsRef<Path>>(path: P) -> StatefulList {
         let mut new_state = ListState::default();
