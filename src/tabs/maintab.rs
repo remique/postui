@@ -65,7 +65,12 @@ impl MainTab<'_> {
                 if ev.code == KeyCode::Char('s') {
                     tokio::spawn(async move {
                         log::info!("Spawned task");
-                        tokio::time::sleep(tokio::time::Duration::new(5, 0)).await;
+                        // tokio::time::sleep(tokio::time::Duration::new(5, 0)).await;
+                        let r_ok = query_url("http://httpbin.org/ip").await;
+                        let r_fail = query_url("http://localhost:2141/wrong/query").await;
+
+                        log::info!("{}", r_ok);
+                        log::info!("{}", r_fail);
 
                         log::info!("Finished task");
                     });
@@ -122,8 +127,11 @@ impl MainTab<'_> {
     }
 }
 
-async fn foo_async() -> String {
-    let resp = reqwest::get("https://httpbin.org/ip").await.unwrap();
+async fn query_url(url: &str) -> String {
+    let resp = reqwest::get(url).await;
 
-    resp.status().to_string()
+    match resp {
+        Ok(r) => return r.status().to_string(),
+        Err(e) => return format!("Error on request: {}", e),
+    };
 }
