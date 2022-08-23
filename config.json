@@ -8,11 +8,11 @@
       "items": [
         {
           "type": "endpoint",
-          "name": "Add user",
+          "name": "Payload test",
           "method": "POST",
           "path": "/root/0/items/0",
-          "url": "http://localhost:3010/add_user",
-          "json_body": "{\n\t\"first\": \"test\",\n\t\"second\":\"value\"\n}"
+          "url": "https://jsonplaceholder.typicode.com/posts",
+          "json_body": "{\n\t\"TestNumber\": 78912,\n\t\"Quantity\": 1,\n\t\"Price\": 18.00\n}"
         },
         {
           "type": "endpoint",

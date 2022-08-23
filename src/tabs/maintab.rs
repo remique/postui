@@ -1,4 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
+use serde_json::{to_string, Map, Value};
+use std::error::Error;
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout, Rect},
@@ -20,6 +22,13 @@ enum Focus {
     FolderTreeWindow,
     MainPane, // This will be changed later on
     FolderPopup,
+}
+
+struct Request {
+    method: String,
+    url: String,
+    // TODO: Should this be String or Value?
+    json_body: Value,
 }
 
 impl MainTab<'_> {
@@ -63,16 +72,24 @@ impl MainTab<'_> {
                     self.current_cmds = self.list_component.generate_cmds();
                 }
                 if ev.code == KeyCode::Char('s') {
+                    let endpoint = self.list_component.tree().get_current_endpoint();
+                    let endpoint = match endpoint {
+                        Some(e) => e,
+                        None => Map::new(),
+                    };
+
+                    let request = prepare_request(endpoint);
+
                     tokio::spawn(async move {
-                        log::info!("Spawned task");
-                        // tokio::time::sleep(tokio::time::Duration::new(5, 0)).await;
-                        let r_ok = query_url("http://httpbin.org/ip").await;
-                        let r_fail = query_url("http://localhost:2141/wrong/query").await;
-
-                        log::info!("{}", r_ok);
-                        log::info!("{}", r_fail);
-
-                        log::info!("Finished task");
+                        let query = query_request(request).await;
+                        match query {
+                            Ok(r) => {
+                                log::info!("{}", r);
+                            }
+                            Err(e) => {
+                                log::error!("{}", e);
+                            }
+                        }
                     });
                 }
             }
@@ -127,11 +144,43 @@ impl MainTab<'_> {
     }
 }
 
-async fn query_url(url: &str) -> String {
-    let resp = reqwest::get(url).await;
+fn prepare_request(input: Map<String, Value>) -> Request {
+    let empty = || String::from("");
+    let get_val = |val: &Value| to_string(val).unwrap();
 
-    match resp {
-        Ok(r) => return r.status().to_string(),
-        Err(e) => return format!("Error on request: {}", e),
+    let url = input
+        .get("url")
+        .map_or_else(empty, get_val)
+        .replace("\"", "");
+    let method = input
+        .get("method")
+        .map_or_else(empty, get_val)
+        .replace("\"", "");
+
+    let json_body = input.get("json_body").map_or_else(empty, get_val);
+
+    let json_body = serde_json::from_str(json_body.as_str()).unwrap();
+
+    Request {
+        url,
+        method,
+        json_body,
+    }
+}
+
+async fn query_request(input: Request) -> Result<String, Box<dyn Error>> {
+    let client = reqwest::Client::new();
+
+    let request = match input.method.as_str() {
+        "POST" => client.post(input.url),
+        "GET" => client.get(input.url),
+        "PUT" => client.put(input.url),
+        "DELETE" => client.delete(input.url),
+        _ => return Err("No method found")?,
     };
+
+    // let response = request.json(&input.json_body).send().await?.json().await?;
+    let response = request.send().await?;
+
+    Ok(format!("{:#?}", response.status()))
 }

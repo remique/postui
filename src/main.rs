@@ -37,7 +37,7 @@ async fn main() -> Result<(), io::Error> {
     terminal.clear()?;
 
     // Set up logger
-    tui_logger::init_logger(log::LevelFilter::Trace).unwrap();
+    tui_logger::init_logger(log::LevelFilter::Debug).unwrap();
     tui_logger::set_default_level(log::LevelFilter::Trace);
 
     log::info!("App initialized");
